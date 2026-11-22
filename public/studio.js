@@ -93,8 +93,50 @@
       timeLimit: isTf ? 15 : 20,
       pointsMultiplier: 1,
       doublePoints: false,
-      explanation: ''
+      explanation: '',
+      media: null
     };
+  }
+
+  function normalizeClientMedia(rawMedia) {
+    if (!rawMedia || typeof rawMedia !== 'object') return null;
+    const type = String(rawMedia.type || '').trim().toLowerCase();
+    if (!['image', 'audio', 'video'].includes(type)) return null;
+    const url = String(rawMedia.url || '').trim().slice(0, 2048);
+    const caption = String(rawMedia.caption || '').trim().slice(0, 160);
+    return { type, url, caption };
+  }
+
+  function extractYouTubeEmbedUrl(url) {
+    const str = String(url || '').trim();
+    const m = str.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i
+    );
+    return m ? `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0` : '';
+  }
+
+  function buildMediaPreviewHtml(media) {
+    if (!media || !media.url) return '';
+    const url = String(media.url).trim();
+    if (!/^(https?:\/\/|\/api\/media\/|\/assets\/)/i.test(url)) return '';
+    const safeUrl = escapeHtml(url);
+    const safeCap = escapeHtml(media.caption || '');
+    const capHtml = safeCap ? `<div class="media-preview-caption">${safeCap}</div>` : '';
+
+    if (media.type === 'image') {
+      return `<img src="${safeUrl}" alt="${safeCap || 'Question image'}" class="media-preview-img" loading="lazy" />${capHtml}`;
+    }
+    if (media.type === 'audio') {
+      return `<audio controls preload="metadata" src="${safeUrl}" class="media-preview-audio"></audio>${capHtml}`;
+    }
+    if (media.type === 'video') {
+      const ytUrl = extractYouTubeEmbedUrl(url);
+      if (ytUrl) {
+        return `<div class="media-video-frame"><iframe src="${escapeHtml(ytUrl)}" title="${safeCap || 'Question video'}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>${capHtml}`;
+      }
+      return `<video controls playsinline preload="metadata" src="${safeUrl}" class="media-preview-video"></video>${capHtml}`;
+    }
+    return '';
   }
 
   function normalizeClientQuestion(raw, idx = 0) {
@@ -141,7 +183,8 @@
       timeLimit,
       pointsMultiplier: mult,
       doublePoints: mult === 2,
-      explanation: String((raw && raw.explanation) || '')
+      explanation: String((raw && raw.explanation) || ''),
+      media: normalizeClientMedia(raw && raw.media)
     };
   }
 
@@ -916,6 +959,10 @@
         `;
       }).join('');
 
+      const mediaBadge = q.media && q.media.url
+        ? `<span class="sq-mini-badge media">${q.media.type === 'image' ? '🖼️ Image' : q.media.type === 'audio' ? '🎧 Audio' : '🎬 Video'}</span>`
+        : '';
+
       return `
         <div class="preview-q-card">
           <div class="preview-q-head">
@@ -923,10 +970,12 @@
               <span class="sq-mini-badge">Q${idx + 1}</span>
               ${q.category ? `<span class="sq-mini-badge">${escapeHtml(q.category)}</span>` : ''}
               ${modeBadge}
+              ${mediaBadge}
             </div>
             <span class="sq-mini-badge mono">${Number(q.timeLimit) || 20}s</span>
           </div>
           <div class="preview-q-title">${escapeHtml(q.question)}</div>
+          ${q.media && q.media.url ? `<div class="media-preview-box preview-modal-media">${buildMediaPreviewHtml(q.media)}</div>` : ''}
           <div class="preview-opts-grid">${optsHtml}</div>
           ${showAns && q.explanation ? `<div class="preview-explain">💡 ${escapeHtml(q.explanation)}</div>` : ''}
         </div>
@@ -1251,6 +1300,9 @@
         : mult === 0
           ? '<span class="sq-mini-badge poll">Poll</span>'
           : '';
+      const mediaBadge = q.media && q.media.url
+        ? `<span class="sq-mini-badge media">${q.media.type === 'image' ? '🖼️' : q.media.type === 'audio' ? '🎧' : '🎬'}</span>`
+        : '';
 
       return `
         <div
@@ -1265,6 +1317,7 @@
               <span class="sq-mini-badge">${typeLabel}</span>
               <span class="sq-mini-badge mono">${Number(q.timeLimit) || 20}s</span>
               ${multBadge}
+              ${mediaBadge}
               ${!complete ? '<span class="sq-mini-badge warn" title="Missing prompt or answer text">Incomplete</span>' : ''}
             </div>
           </div>
@@ -1305,6 +1358,8 @@
     $('qPromptInput').value = q.question || '';
     updatePromptCharCounter();
 
+    renderMediaEditor(q);
+
     $('qExplanationInput').value = q.explanation || '';
     updateExplainCharCounter();
 
@@ -1342,6 +1397,109 @@
   function updateExplainCharCounter() {
     const len = ($('qExplanationInput').value || '').length;
     $('qExplainCharCount').textContent = `${len} / 400`;
+  }
+
+  function renderMediaEditor(q) {
+    const activeType = q && q.media && q.media.type ? q.media.type : 'none';
+    document.querySelectorAll('#qMediaEditorBox .media-type-btn').forEach((btn) => {
+      const isAct = btn.dataset.mediaType === activeType;
+      btn.classList.toggle('active', isAct);
+      btn.setAttribute('aria-pressed', String(isAct));
+    });
+
+    const fieldsWrap = $('qMediaFieldsWrap');
+    const urlInput = $('qMediaUrlInput');
+    const capInput = $('qMediaCaptionInput');
+    const fileInput = $('qMediaFileInput');
+    const previewBox = $('qMediaPreviewBox');
+    const statusEl = $('qMediaUploadStatus');
+
+    if (activeType === 'none') {
+      fieldsWrap.style.display = 'none';
+      previewBox.style.display = 'none';
+      previewBox.innerHTML = '';
+      return;
+    }
+
+    fieldsWrap.style.display = 'grid';
+    const placeholders = {
+      image: 'Paste image URL (https://...) or upload PNG/JPG/WebP/GIF',
+      audio: 'Paste audio URL (MP3/WAV/OGG) or upload an audio clip',
+      video: 'Paste MP4/WebM or YouTube URL, or upload a short video clip'
+    };
+    const accepts = {
+      image: 'image/png,image/jpeg,image/webp,image/gif',
+      audio: 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/webm,.mp3,.wav,.ogg,.m4a',
+      video: 'video/mp4,video/webm,video/ogg,.mp4,.webm,.ogv'
+    };
+
+    urlInput.placeholder = placeholders[activeType] || placeholders.image;
+    fileInput.accept = accepts[activeType] || '*/*';
+    urlInput.value = (q.media && q.media.url) || '';
+    capInput.value = (q.media && q.media.caption) || '';
+    if (statusEl && !statusEl.dataset.uploading) {
+      statusEl.textContent = activeType === 'video'
+        ? 'Supports YouTube links, direct MP4/WebM URLs, or uploads up to 10 MB'
+        : 'Supports hosted URLs or direct uploads up to 10 MB';
+    }
+
+    const previewHtml = buildMediaPreviewHtml(q.media);
+    if (previewHtml) {
+      previewBox.innerHTML = previewHtml;
+      previewBox.style.display = 'block';
+    } else {
+      previewBox.innerHTML = '';
+      previewBox.style.display = 'none';
+    }
+  }
+
+  async function handleMediaFileUpload(file) {
+    const q = state.editor.questions[state.editor.activeIndex];
+    if (!q || !file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File exceeds 10 MB limit. For larger videos, paste a YouTube or MP4 URL.');
+      return;
+    }
+
+    const statusEl = $('qMediaUploadStatus');
+    const uploadBtn = $('qMediaUploadBtn');
+    uploadBtn.disabled = true;
+    statusEl.dataset.uploading = '1';
+    statusEl.textContent = `Uploading ${file.name}…`;
+
+    try {
+      const dataBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read selected file.'));
+        reader.readAsDataURL(file);
+      });
+
+      const resp = await apiFetch('/api/media/upload', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType: file.type,
+          dataBase64
+        })
+      });
+
+      q.media = {
+        type: resp.media.type,
+        url: resp.media.url,
+        caption: (q.media && q.media.caption) || ''
+      };
+      markEditorDirty();
+      renderMediaEditor(q);
+      renderEditorSidebar();
+      showToast(`Uploaded ${file.name}!`);
+    } catch (err) {
+      showToast(err.message || 'Media upload failed.');
+    } finally {
+      uploadBtn.disabled = false;
+      delete statusEl.dataset.uploading;
+      $('qMediaFileInput').value = '';
+    }
   }
 
   function renderAnswerTiles(q) {
@@ -1547,7 +1705,14 @@
           timeLimit: Number(q.timeLimit) || 20,
           pointsMultiplier: mult,
           doublePoints: mult === 2,
-          explanation: String(q.explanation || '').trim()
+          explanation: String(q.explanation || '').trim(),
+          media: q.media && q.media.url && ['image', 'audio', 'video'].includes(q.media.type)
+            ? {
+                type: q.media.type,
+                url: String(q.media.url).trim(),
+                caption: String(q.media.caption || '').trim()
+              }
+            : null
         };
       })
     };
@@ -2133,6 +2298,61 @@
       q.question = e.target.value;
       updatePromptCharCounter();
       markEditorDirty();
+      renderEditorSidebar();
+    });
+
+    // Question Media controls (None / Image / Audio / Video + Upload)
+    document.querySelectorAll('#qMediaEditorBox .media-type-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const q = state.editor.questions[state.editor.activeIndex];
+        if (!q) return;
+        const nextType = btn.dataset.mediaType;
+        if (nextType === 'none') {
+          q.media = null;
+        } else {
+          const prevUrl = q.media && q.media.type === nextType ? q.media.url : '';
+          const prevCap = q.media ? q.media.caption : '';
+          q.media = { type: nextType, url: prevUrl, caption: prevCap };
+        }
+        markEditorDirty();
+        renderMediaEditor(q);
+        renderEditorSidebar();
+      });
+    });
+
+    $('qMediaUrlInput').addEventListener('input', (e) => {
+      const q = state.editor.questions[state.editor.activeIndex];
+      if (!q || !q.media) return;
+      q.media.url = e.target.value.trim();
+      markEditorDirty();
+      renderMediaEditor(q);
+      renderEditorSidebar();
+    });
+
+    $('qMediaCaptionInput').addEventListener('input', (e) => {
+      const q = state.editor.questions[state.editor.activeIndex];
+      if (!q || !q.media) return;
+      q.media.caption = e.target.value;
+      markEditorDirty();
+      const capEl = document.querySelector('#qMediaPreviewBox .media-preview-caption');
+      if (capEl) capEl.textContent = e.target.value;
+    });
+
+    $('qMediaUploadBtn').addEventListener('click', () => {
+      $('qMediaFileInput').click();
+    });
+
+    $('qMediaFileInput').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) handleMediaFileUpload(file);
+    });
+
+    $('qMediaClearBtn').addEventListener('click', () => {
+      const q = state.editor.questions[state.editor.activeIndex];
+      if (!q) return;
+      q.media = null;
+      markEditorDirty();
+      renderMediaEditor(q);
       renderEditorSidebar();
     });
 

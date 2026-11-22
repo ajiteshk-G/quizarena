@@ -361,15 +361,48 @@ async function run() {
     logPass(`4 built-in public templates verified and cloned (${clonedQuiz.id})`);
 
     // =========================================================================
-    // 4. CUSTOM QUIZ CRUD, EXPORT CSV/JSON, ACCESS CONTROL & DELETE
+    // 4. CUSTOM QUIZ CRUD, MEDIA UPLOAD (IMAGE/AUDIO/VIDEO), EXPORT & DELETE
     // =========================================================================
-    logStep('4/6', 'Verifying Custom Quiz CRUD (MCQ + True/False + 0x Poll + 2x Boss), Export, & Delete');
+    logStep('4/6', 'Verifying Media Upload (Image/Audio/Video), Custom Quiz CRUD, Export, & Delete');
+
+    // 4a. Media upload security & serving (1x1 PNG)
+    const samplePngB64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    const unauthUpload = await httpReq('/api/media/upload', {
+      method: 'POST',
+      body: { mimeType: 'image/png', dataBase64: samplePngB64 }
+    });
+    assert.equal(unauthUpload.status, 401, 'Unauthenticated media upload must return 401');
+
+    const badMimeUpload = await httpReq('/api/media/upload', {
+      method: 'POST',
+      token: adaToken,
+      body: { mimeType: 'text/html', dataBase64: Buffer.from('<script>alert(1)</script>').toString('base64') }
+    });
+    assert.equal(badMimeUpload.status, 400, 'Disallowed MIME type must return 400');
+
+    const imgUpload = await httpReq('/api/media/upload', {
+      method: 'POST',
+      token: adaToken,
+      body: { filename: 'diagram.png', mimeType: 'image/png', dataBase64: samplePngB64 }
+    });
+    assert.equal(imgUpload.status, 200, `Media upload failed: ${imgUpload.text}`);
+    assert.equal(imgUpload.json?.media?.type, 'image');
+    const uploadedImgUrl = imgUpload.json.media.url;
+    assert.match(uploadedImgUrl, /^\/api\/media\/med_[a-z0-9_]+\.png$/);
+
+    const fetchedImg = await httpReq(uploadedImgUrl);
+    assert.equal(fetchedImg.status, 200, 'Uploaded media must be served with HTTP 200');
+    assert.equal(fetchedImg.headers.get('accept-ranges'), 'bytes');
+
+    const rangedImg = await httpReq(uploadedImgUrl, { headers: { Range: 'bytes=0-15' } });
+    assert.equal(rangedImg.status, 206, 'Range request on uploaded media must return HTTP 206');
+
     const createRes = await httpReq('/api/quizzes', {
       method: 'POST',
       token: adaToken,
       body: {
         title: 'QuizArena Launch Gauntlet',
-        description: 'E2E custom quiz covering MCQ, True/False, Poll, and Boss Finale',
+        description: 'E2E custom quiz covering MCQ, True/False, Poll, Boss Finale, & Media (Image/Audio/Video)',
         coverEmoji: '🚀',
         visibility: 'private',
         questions: [
@@ -380,7 +413,8 @@ async function run() {
             correctIndex: 0,
             timeLimit: 20,
             pointsMultiplier: 1,
-            explanation: 'WebSockets maintain a single full-duplex connection for instant room broadcasts.'
+            explanation: 'WebSockets maintain a single full-duplex connection for instant room broadcasts.',
+            media: { type: 'image', url: uploadedImgUrl, caption: 'Uploaded architecture diagram' }
           },
           {
             category: 'Serverless',
@@ -389,7 +423,8 @@ async function run() {
             correctIndex: 0,
             timeLimit: 15,
             pointsMultiplier: 1,
-            explanation: 'Session affinity + single-instance concurrency keeps in-memory rooms unified.'
+            explanation: 'Session affinity + single-instance concurrency keeps in-memory rooms unified.',
+            media: { type: 'audio', url: 'https://example.com/clip.mp3', caption: 'Audio prompt clip' }
           },
           {
             category: 'Audience Pulse',
@@ -398,7 +433,8 @@ async function run() {
             correctIndex: 0,
             timeLimit: 15,
             pointsMultiplier: 0,
-            explanation: 'Live Polls capture sentiment with zero point pressure!'
+            explanation: 'Live Polls capture sentiment with zero point pressure!',
+            media: { type: 'video', url: 'https://youtu.be/dQw4w9WgXcQ', caption: 'Demo walkthrough clip' }
           },
           {
             category: 'Boss Finale',
@@ -416,10 +452,15 @@ async function run() {
     const customQuiz = createRes.json.quiz;
     assert.equal(customQuiz.questions.length, 4);
     assert.equal(customQuiz.questions[0].type, 'mcq');
+    assert.equal(customQuiz.questions[0].media?.type, 'image');
+    assert.equal(customQuiz.questions[0].media?.url, uploadedImgUrl);
     assert.equal(customQuiz.questions[1].type, 'tf');
+    assert.equal(customQuiz.questions[1].media?.type, 'audio');
     assert.equal(customQuiz.questions[2].pointsMultiplier, 0);
+    assert.equal(customQuiz.questions[2].media?.type, 'video');
     assert.equal(customQuiz.questions[3].pointsMultiplier, 2);
     assert.equal(customQuiz.questions[3].doublePoints, true);
+    assert.equal(customQuiz.questions[3].media, null);
 
     // Update quiz via PUT
     const updatedQuestions = customQuiz.questions.map((q) => ({ ...q }));

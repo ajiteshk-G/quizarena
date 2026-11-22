@@ -553,14 +553,71 @@
     }, 950);
   }
 
+  function extractYouTubeEmbedUrl(url) {
+    const str = String(url || '').trim();
+    const m = str.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i
+    );
+    return m ? `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0` : '';
+  }
+
+  function clearAllStageMedia() {
+    ['hqMediaWrap', 'hrMediaWrap', 'pqMediaWrap'].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.querySelectorAll('audio, video').forEach((m) => {
+        try { m.pause(); } catch {}
+      });
+      el.innerHTML = '';
+      el.style.display = 'none';
+    });
+  }
+
+  function renderStageMedia(containerId, media) {
+    const el = $(containerId);
+    if (!el) return false;
+    el.innerHTML = '';
+    if (!media || !media.url || !['image', 'audio', 'video'].includes(media.type)) {
+      el.style.display = 'none';
+      return false;
+    }
+    const url = String(media.url).trim();
+    if (!/^(https?:\/\/|\/api\/media\/|\/assets\/)/i.test(url)) {
+      el.style.display = 'none';
+      return false;
+    }
+
+    const safeUrl = escapeHtml(url);
+    const safeCap = escapeHtml(media.caption || '');
+    const capHtml = safeCap ? `<div class="stage-media-caption">${safeCap}</div>` : '';
+
+    if (media.type === 'image') {
+      el.innerHTML = `<img src="${safeUrl}" alt="${safeCap || 'Question visual'}" class="stage-media-img" />${capHtml}`;
+    } else if (media.type === 'audio') {
+      el.innerHTML = `<audio controls preload="auto" src="${safeUrl}" class="stage-media-audio"></audio>${capHtml}`;
+    } else if (media.type === 'video') {
+      const ytUrl = extractYouTubeEmbedUrl(url);
+      if (ytUrl) {
+        el.innerHTML = `<div class="stage-video-frame"><iframe src="${escapeHtml(ytUrl)}" title="${safeCap || 'Question video'}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>${capHtml}`;
+      } else {
+        el.innerHTML = `<video controls playsinline preload="auto" src="${safeUrl}" class="stage-media-video"></video>${capHtml}`;
+      }
+    }
+
+    el.style.display = 'block';
+    return true;
+  }
+
   function onPhaseQuestion(msg) {
     clearClientTimers();
+    clearAllStageMedia();
 
     const isPoll = isPollMsg(msg);
     const isBoss = isBossMsg(msg);
     state.activeQuestionIsPoll = isPoll;
     const options = Array.isArray(msg.options) ? msg.options : [];
     const isTwoOption = options.length === 2;
+    const hasAudioOrVideo = Boolean(msg.media && (msg.media.type === 'audio' || msg.media.type === 'video'));
 
     if (state.role === 'host') {
       $('hqProgress').textContent = `Q ${msg.questionIndex + 1} / ${msg.totalQuestions}`;
@@ -568,6 +625,7 @@
       $('hqBossBadge').style.display = isBoss ? 'inline-flex' : 'none';
       if ($('hqPollBadge')) $('hqPollBadge').style.display = isPoll ? 'inline-flex' : 'none';
       $('hqText').textContent = msg.question;
+      renderStageMedia('hqMediaWrap', msg.media || null);
       $('hqSlideRef').textContent = msg.slideRef || msg.category || (isTwoOption ? 'True / False' : 'Live Round');
       if ($('hqAnswersLabel')) $('hqAnswersLabel').textContent = isPoll ? 'Votes In' : 'Answers In';
       $('hqAnsweredCount').textContent = '0';
@@ -585,8 +643,13 @@
       });
 
       showView('viewHostQuestion');
-      window.quizAudio.startQuestionMusic();
-      setEqualizer(true);
+      if (hasAudioOrVideo) {
+        window.quizAudio.stopMusic();
+        setEqualizer(false);
+      } else {
+        window.quizAudio.startQuestionMusic();
+        setEqualizer(true);
+      }
 
       const totalMs = msg.timeLimit * 1000;
       const startAt = Date.now();
@@ -638,6 +701,7 @@
       if ($('pqBossBadge')) $('pqBossBadge').style.display = isBoss ? 'inline-flex' : 'none';
       if ($('pqPollBadge')) $('pqPollBadge').style.display = isPoll ? 'inline-flex' : 'none';
       $('pqText').textContent = msg.question;
+      renderStageMedia('pqMediaWrap', msg.media || null);
 
       const grid = $('pqOptionsGrid');
       grid.classList.toggle('two-col', isTwoOption);
@@ -670,6 +734,7 @@
 
   function onHostReveal(msg) {
     clearClientTimers();
+    clearAllStageMedia();
     window.quizAudio.stopMusic();
     setEqualizer(false);
     window.quizAudio.playRevealCorrect();
@@ -690,6 +755,7 @@
     $('hrSlideRef').textContent = refText;
     $('hrSlideRef').style.display = refText ? 'inline-block' : 'none';
     $('hrQuestionText').textContent = msg.question;
+    renderStageMedia('hrMediaWrap', msg.media || null);
 
     const debriefBox = $('hrDebriefBox');
     if (msg.explanation && String(msg.explanation).trim()) {
@@ -757,6 +823,7 @@
   }
 
   function onHostLeaderboard(msg) {
+    clearAllStageMedia();
     window.quizAudio.playLeaderboard();
     $('lbSubtitle').textContent = `Showing Top ${msg.leaderboard.length} of ${msg.totalPlayers} players · After Question ${msg.questionIndex + 1}/${msg.totalQuestions}`;
     $('lbNextBtn').textContent = msg.isLastQuestion ? '🏆 Reveal Final Podium →' : 'Next Question →';

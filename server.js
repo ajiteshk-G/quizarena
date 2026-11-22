@@ -58,7 +58,7 @@ const auth = createAuth(store);
 const initPromise = Promise.resolve().then(() => store.init());
 
 const app = express();
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '16mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Active legacy admin sessions: token -> { username, expiresAt }
@@ -192,6 +192,131 @@ app.post('/api/auth/change-password', auth.requireAuth, (req, res) => {
     return res.json({ ok: true, user });
   } catch (err) {
     return res.status(err.status || 400).json({ ok: false, message: err.message || 'Could not update password.' });
+  }
+});
+
+// ==================== QUESTION MEDIA UPLOAD & SERVING ====================
+const MEDIA_MIME_MAP = {
+  'image/png': { type: 'image', ext: 'png' },
+  'image/jpeg': { type: 'image', ext: 'jpg' },
+  'image/jpg': { type: 'image', ext: 'jpg' },
+  'image/webp': { type: 'image', ext: 'webp' },
+  'image/gif': { type: 'image', ext: 'gif' },
+  'audio/mpeg': { type: 'audio', ext: 'mp3' },
+  'audio/mp3': { type: 'audio', ext: 'mp3' },
+  'audio/wav': { type: 'audio', ext: 'wav' },
+  'audio/x-wav': { type: 'audio', ext: 'wav' },
+  'audio/ogg': { type: 'audio', ext: 'ogg' },
+  'audio/mp4': { type: 'audio', ext: 'm4a' },
+  'audio/x-m4a': { type: 'audio', ext: 'm4a' },
+  'audio/webm': { type: 'audio', ext: 'webm' },
+  'video/mp4': { type: 'video', ext: 'mp4' },
+  'video/webm': { type: 'video', ext: 'webm' },
+  'video/ogg': { type: 'video', ext: 'ogg' }
+};
+
+const EXT_CONTENT_TYPE = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  m4a: 'audio/mp4',
+  mp4: 'video/mp4',
+  webm: 'video/webm'
+};
+
+const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB
+
+app.post('/api/media/upload', auth.requireAuth, async (req, res) => {
+  try {
+    const { mimeType = '', dataBase64 = '' } = req.body || {};
+    const cleanMime = String(mimeType).split(';')[0].trim().toLowerCase();
+    const spec = MEDIA_MIME_MAP[cleanMime];
+    if (!spec) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Unsupported file type. Upload PNG, JPG, WebP, GIF, MP3, WAV, OGG, M4A, MP4, or WebM.'
+      });
+    }
+
+    const stripped = String(dataBase64 || '').replace(/^data:[^;]+;base64,/i, '').trim();
+    if (!stripped) {
+      return res.status(400).json({ ok: false, message: 'No file data received.' });
+    }
+
+    const buffer = Buffer.from(stripped, 'base64');
+    if (!buffer.length) {
+      return res.status(400).json({ ok: false, message: 'Uploaded file is empty.' });
+    }
+    if (buffer.length > MAX_MEDIA_BYTES) {
+      return res.status(413).json({
+        ok: false,
+        message: 'File exceeds the 10 MB upload limit. For larger videos, paste a hosted MP4 or YouTube URL.'
+      });
+    }
+
+    const filename = await store.saveMediaBuffer({
+      buffer,
+      mimeType: cleanMime,
+      ext: spec.ext
+    });
+
+    return res.json({
+      ok: true,
+      media: {
+        type: spec.type,
+        url: `/api/media/${filename}`,
+        mimeType: cleanMime,
+        size: buffer.length
+      }
+    });
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      ok: false,
+      message: err.message || 'Media upload failed.'
+    });
+  }
+});
+
+app.get('/api/media/:filename', async (req, res) => {
+  try {
+    const filename = String(req.params.filename || '').trim();
+    const buffer = await store.readMediaBuffer(filename);
+    if (!buffer) {
+      return res.status(404).json({ ok: false, message: 'Media not found.' });
+    }
+
+    const ext = filename.split('.').pop().toLowerCase();
+    const contentType = EXT_CONTENT_TYPE[ext] || 'application/octet-stream';
+    const total = buffer.length;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
+    const range = req.headers.range;
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(String(range).trim());
+      if (match) {
+        const start = match[1] ? parseInt(match[1], 10) : 0;
+        const end = match[2] ? Math.min(parseInt(match[2], 10), total - 1) : total - 1;
+        if (start >= 0 && start <= end && end < total) {
+          res.status(206);
+          res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+          res.setHeader('Content-Length', String(end - start + 1));
+          return res.end(buffer.subarray(start, end + 1));
+        }
+      }
+    }
+
+    res.setHeader('Content-Length', String(total));
+    return res.end(buffer);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Failed to serve media.' });
   }
 });
 
@@ -742,6 +867,7 @@ function startQuestion(room) {
     slideRef: q.slideRef || '',
     question: q.question,
     options: q.options,
+    media: q.media || null,
     timeLimit: q.timeLimit,
     pointsMultiplier: mult,
     doublePoints: mult === 2,
@@ -914,6 +1040,7 @@ function revealQuestion(room) {
     questionType: q.options.length === 2 ? 'tf' : 'mcq',
     question: q.question,
     options: q.options,
+    media: q.media || null,
     correctIndex: q.correctIndex,
     pointsMultiplier: mult,
     doublePoints: mult === 2,

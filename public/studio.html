@@ -570,6 +570,49 @@
                 </div>
               </div>
 
+              <!-- Optional Question Media (Image / Audio / Video) -->
+              <div class="media-editor-box" id="qMediaEditorBox">
+                <div class="media-editor-head">
+                  <span class="form-label" style="margin:0;">QUESTION MEDIA (OPTIONAL)</span>
+                  <div class="media-type-pills" role="group" aria-label="Question media type">
+                    <button type="button" class="media-type-btn active" data-media-type="none">None</button>
+                    <button type="button" class="media-type-btn" data-media-type="image">🖼️ Image</button>
+                    <button type="button" class="media-type-btn" data-media-type="audio">🎧 Audio</button>
+                    <button type="button" class="media-type-btn" data-media-type="video">🎬 Video</button>
+                  </div>
+                </div>
+
+                <div id="qMediaFieldsWrap" class="media-fields-wrap" style="display:none;">
+                  <div class="media-input-row">
+                    <input
+                      id="qMediaUrlInput"
+                      class="input input-sm"
+                      type="url"
+                      maxlength="2048"
+                      placeholder="Paste image URL or upload a file..."
+                      aria-label="Media URL"
+                    />
+                    <input type="file" id="qMediaFileInput" class="sr-only" />
+                    <button type="button" class="btn btn-ghost btn-sm" id="qMediaUploadBtn">⬆️ Upload</button>
+                    <button type="button" class="btn btn-danger-ghost btn-sm" id="qMediaClearBtn" title="Remove media" aria-label="Remove media">✕</button>
+                  </div>
+
+                  <div class="media-caption-row">
+                    <input
+                      id="qMediaCaptionInput"
+                      class="input input-sm"
+                      type="text"
+                      maxlength="160"
+                      placeholder="Optional caption or alt text (for accessibility)..."
+                      aria-label="Media caption or alt text"
+                    />
+                    <span class="media-upload-hint" id="qMediaUploadStatus">Supports URLs or uploads up to 10 MB</span>
+                  </div>
+
+                  <div id="qMediaPreviewBox" class="media-preview-box" style="display:none;"></div>
+                </div>
+              </div>
+
               <div class="tiles-instruction-bar">
                 <span id="tilesInstructionText">Click the checkmark circle (✓) on an answer tile to mark it as the <strong>Correct Answer</strong>:</span>
                 <button type="button" class="btn-link-inline" id="resetTfPresetBtn" style="display:none;">Reset labels to True / False</button>

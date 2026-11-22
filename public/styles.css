@@ -946,6 +946,85 @@ h1, h2, h3, .display {
   color: var(--text-dark);
 }
 
+/* Question Media (Image / Audio / Video) on Live Stage & Player Mobile */
+.stage-media-wrap {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.stage-media-img {
+  max-width: 100%;
+  max-height: 290px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  box-shadow: var(--shadow-1);
+}
+
+.stage-media-audio {
+  width: 100%;
+  max-width: 460px;
+  display: block;
+  margin: 0 auto;
+}
+
+.stage-media-video {
+  width: 100%;
+  max-width: 560px;
+  max-height: 310px;
+  border-radius: var(--radius-lg);
+  background: #000000;
+  display: block;
+  margin: 0 auto;
+  box-shadow: var(--shadow-2);
+}
+
+.stage-video-frame {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000000;
+  box-shadow: var(--shadow-2);
+}
+
+.stage-video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stage-media-caption {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.stage-media-compact .stage-media-img,
+.stage-media-compact .stage-media-video {
+  max-height: 180px;
+}
+
+.stage-media-compact .stage-video-frame {
+  max-width: 360px;
+}
+
+.stage-media-player .stage-media-img,
+.stage-media-player .stage-media-video {
+  max-height: 185px;
+}
+
+.stage-media-player .stage-video-frame {
+  max-width: 100%;
+}
+
 .stage-hud {
   display: flex;
   align-items: center;
