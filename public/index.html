@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a73e8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>QuizArena — Live Multiplayer Quiz Platform</title>
   <meta name="description" content="Host interactive live quizzes and polls for up to 250 players — build from scratch, import CSV/Markdown, or generate in seconds with AI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <a href="#viewLanding" class="skip-link">Skip to main content</a>
   <div class="stage-bg" aria-hidden="true">
     <div class="geo geo-1"></div>
     <div class="geo geo-2"></div>
@@ -16,12 +21,19 @@
   </div>
   <div class="urgency-vignette" id="urgencyVignette" aria-hidden="true"></div>
   <div id="reactionsLayer" aria-hidden="true"></div>
-  <canvas id="confettiCanvas"></canvas>
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
 
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand" id="brandHomeBtn" title="Return to QuizArena home">
-        <div class="brand-mark">QA</div>
+      <div class="brand" id="brandHomeBtn" role="button" tabindex="0" title="Return to QuizArena home" aria-label="QuizArena Home">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="9" height="9" rx="2.5" fill="#4285F4"/>
+            <rect x="13" y="2" width="9" height="9" rx="2.5" fill="#EA4335"/>
+            <rect x="2" y="13" width="9" height="9" rx="2.5" fill="#FBBC04"/>
+            <rect x="13" y="13" width="9" height="9" rx="2.5" fill="#34A853"/>
+          </svg>
+        </div>
         <div>
           <div class="brand-title">QuizArena</div>
           <div class="brand-sub">Live Multiplayer Quiz &amp; Poll Platform</div>
@@ -29,18 +41,18 @@
       </div>
 
       <div class="topbar-controls">
-        <span id="topRoomBadge" class="q-meta-pill" style="display:none;">PIN: <span class="mono" id="topRoomPin">------</span></span>
+        <span id="topRoomBadge" class="q-meta-pill" style="display:none;" aria-live="polite">PIN: <span class="mono" id="topRoomPin">------</span></span>
         <div class="audio-pill" title="Music & Sound Effects">
           <div class="eq-bars" id="eqBars" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
           </div>
-          <button class="btn btn-ghost btn-sm" id="muteBtn" style="padding:4px 8px;border:none;background:transparent;">🔊</button>
-          <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.45" aria-label="Volume" />
+          <button type="button" class="btn btn-ghost btn-sm" id="muteBtn" aria-label="Toggle sound effects and music" style="padding:4px 8px;border:none;background:transparent;min-width:36px;">🔊</button>
+          <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.45" aria-label="Audio volume" />
         </div>
-        <a href="/studio" class="btn btn-ghost btn-sm" id="topCreateQuizBtn">🔐 Host Sign In</a>
+        <a href="/studio" class="btn btn-ghost btn-sm" id="topCreateQuizBtn">Host Sign In</a>
         <a href="/studio" class="btn btn-ghost btn-sm" id="topStudioBtn" style="display:none;">&larr; Studio</a>
-        <button class="btn btn-ghost btn-sm" id="fullscreenBtn" title="Toggle Fullscreen Stage" style="display:none;">⛶ Fullscreen</button>
-        <button class="btn btn-ghost btn-sm" id="adminLogoutBtn" title="Sign out of Admin" style="display:none;">🚪 Sign Out</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="fullscreenBtn" title="Toggle Fullscreen Stage" aria-label="Toggle fullscreen stage" style="display:none;">⛶ Fullscreen</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="adminLogoutBtn" title="Sign out of Admin" style="display:none;">Sign Out</button>
       </div>
     </header>
 
@@ -453,13 +465,13 @@
           See your nickname on the presenter's screen?<br/>
           Send a reaction to the big screen while we wait!
         </p>
-        <div class="reaction-bar" id="lobbyReactionBar">
-          <button type="button" class="reaction-btn" data-emoji="🔥">🔥</button>
-          <button type="button" class="reaction-btn" data-emoji="🚀">🚀</button>
-          <button type="button" class="reaction-btn" data-emoji="👏">👏</button>
-          <button type="button" class="reaction-btn" data-emoji="🤯">🤯</button>
-          <button type="button" class="reaction-btn" data-emoji="🎉">🎉</button>
-          <button type="button" class="reaction-btn" data-emoji="⚡">⚡</button>
+        <div class="reaction-bar" id="lobbyReactionBar" role="group" aria-label="Send live reaction to main screen">
+          <button type="button" class="reaction-btn" data-emoji="🔥" aria-label="Send fire reaction">🔥</button>
+          <button type="button" class="reaction-btn" data-emoji="🚀" aria-label="Send rocket reaction">🚀</button>
+          <button type="button" class="reaction-btn" data-emoji="👏" aria-label="Send applause reaction">👏</button>
+          <button type="button" class="reaction-btn" data-emoji="🤯" aria-label="Send mind blown reaction">🤯</button>
+          <button type="button" class="reaction-btn" data-emoji="🎉" aria-label="Send party reaction">🎉</button>
+          <button type="button" class="reaction-btn" data-emoji="⚡" aria-label="Send lightning reaction">⚡</button>
         </div>
       </div>
 
@@ -487,7 +499,7 @@
       </div>
 
       <!-- Player Reveal Feedback -->
-      <div id="pStateReveal" class="player-status-card" style="display:none;">
+      <div id="pStateReveal" class="player-status-card" style="display:none;" aria-live="polite">
         <img id="prGif" src="/assets/correct-party.gif" alt="Result" class="gif-badge" />
         <h2 id="prTitle" style="font-size:32px;font-weight:900;margin-bottom:6px;">Correct!</h2>
         <div id="prPoints" class="mono" style="font-size:28px;font-weight:800;margin-bottom:12px;">+940 pts</div>
@@ -510,17 +522,17 @@
         <h2 id="ppRankTitle" style="font-size:30px;font-weight:900;margin-bottom:8px;">You Finished #1!</h2>
         <div id="ppStats" style="font-size:16px;color:var(--text-dark);font-weight:700;margin-bottom:14px;"></div>
         <p style="font-size:14px;color:var(--text-muted);">Celebrate on the main stage!</p>
-        <div class="reaction-bar" id="podiumReactionBar">
-          <button type="button" class="reaction-btn" data-emoji="🎉">🎉</button>
-          <button type="button" class="reaction-btn" data-emoji="👏">👏</button>
-          <button type="button" class="reaction-btn" data-emoji="🔥">🔥</button>
-          <button type="button" class="reaction-btn" data-emoji="🚀">🚀</button>
+        <div class="reaction-bar" id="podiumReactionBar" role="group" aria-label="Send celebration reaction">
+          <button type="button" class="reaction-btn" data-emoji="🎉" aria-label="Send party reaction">🎉</button>
+          <button type="button" class="reaction-btn" data-emoji="👏" aria-label="Send applause reaction">👏</button>
+          <button type="button" class="reaction-btn" data-emoji="🔥" aria-label="Send fire reaction">🔥</button>
+          <button type="button" class="reaction-btn" data-emoji="🚀" aria-label="Send rocket reaction">🚀</button>
         </div>
       </div>
     </main>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="/audio.js"></script>
   <script src="/app.js"></script>
