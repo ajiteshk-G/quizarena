@@ -1,0 +1,17 @@
+# Dependencies & environment-specific lockfiles
+node_modules/
+package-lock.json
+
+# Runtime & persisted data
+data/
+*.tmp
+
+# Local secrets & environment configuration
+.env
+.env.*
+!.env.example
+
+# Logs & OS metadata
+*.log
+npm-debug.log*
+.DS_Store

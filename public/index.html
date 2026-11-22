@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuizArena — Live Multiplayer Quiz Platform</title>
+  <meta name="description" content="Host interactive live quizzes and polls for up to 250 players — build from scratch, import CSV/Markdown, or generate in seconds with AI." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="stage-bg" aria-hidden="true">
+    <div class="geo geo-1"></div>
+    <div class="geo geo-2"></div>
+    <div class="geo geo-3"></div>
+    <div class="geo geo-4"></div>
+  </div>
+  <div class="urgency-vignette" id="urgencyVignette" aria-hidden="true"></div>
+  <div id="reactionsLayer" aria-hidden="true"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" id="brandHomeBtn" title="Return to QuizArena home">
+        <div class="brand-mark">QA</div>
+        <div>
+          <div class="brand-title">QuizArena</div>
+          <div class="brand-sub">Live Multiplayer Quiz &amp; Poll Platform</div>
+        </div>
+      </div>
+
+      <div class="topbar-controls">
+        <span id="topRoomBadge" class="q-meta-pill" style="display:none;">PIN: <span class="mono" id="topRoomPin">------</span></span>
+        <div class="audio-pill" title="Music & Sound Effects">
+          <div class="eq-bars" id="eqBars" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="muteBtn" style="padding:4px 8px;border:none;background:transparent;">🔊</button>
+          <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.45" aria-label="Volume" />
+        </div>
+        <a href="/studio" class="btn btn-ghost btn-sm" id="topCreateQuizBtn">🔐 Host Sign In</a>
+        <a href="/studio" class="btn btn-ghost btn-sm" id="topStudioBtn" style="display:none;">&larr; Studio</a>
+        <button class="btn btn-ghost btn-sm" id="fullscreenBtn" title="Toggle Fullscreen Stage" style="display:none;">⛶ Fullscreen</button>
+        <button class="btn btn-ghost btn-sm" id="adminLogoutBtn" title="Sign out of Admin" style="display:none;">🚪 Sign Out</button>
+      </div>
+    </header>
+
+    <!-- ==================== VIEW 1: LANDING / JOIN ==================== -->
+    <main id="viewLanding" class="view active">
+      <div class="landing-grid">
+        <section class="card-studio">
+          <div>
+            <div class="hero-art-wrap">
+              <img src="/assets/hero-arena.svg" alt="QuizArena Live Multiplayer Stage" />
+            </div>
+            <h1 class="hero-title">QuizArena<br/>Live Multiplayer Stage</h1>
+            <p class="hero-desc">
+              Interactive real-time quizzes, 2&times; Boss rounds, and live audience polls for up to 250 concurrent players.
+            </p>
+            <div class="stat-strip">
+              <div class="stat-chip">
+                <div class="stat-chip-val">250</div>
+                <div class="stat-chip-lbl">Live Players</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-chip-val">MCQ + T/F</div>
+                <div class="stat-chip-lbl">Fast Rounds</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-chip-val">2&times; &amp; Polls</div>
+                <div class="stat-chip-lbl">Game Modes</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px;">
+            <div style="font-size:14px;color:var(--text-secondary);font-weight:700;text-align:center;">
+              🎯 Joining a live session? Enter your 6-digit Game PIN on the right.
+            </div>
+            <div style="text-align:center;">
+              <a href="/studio" class="btn btn-ghost btn-sm" id="heroStudioBtn">
+                🔐 Authorized Host Sign In &rarr;
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="card join-card" style="display:flex;flex-direction:column;justify-content:center;">
+          <h2 style="font-size:28px;font-weight:900;letter-spacing:-0.02em;margin-bottom:4px;">Join a Live Game</h2>
+          <p style="font-size:14px;color:var(--text-muted);margin-bottom:22px;">Enter the 6-digit PIN from the presenter's screen or scan the QR code.</p>
+
+          <div id="joinError" class="error-box"></div>
+
+          <form id="joinForm">
+            <div class="form-group">
+              <label class="form-label" for="joinPin">GAME PIN</label>
+              <input id="joinPin" class="input input-pin" type="text" inputmode="numeric" maxlength="7" placeholder="123 456" autocomplete="off" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="joinName">YOUR NICKNAME</label>
+              <input id="joinName" class="input" type="text" maxlength="24" placeholder="e.g. Ajitesh" autocomplete="off" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">CHOOSE AVATAR</label>
+              <div class="avatar-picker" id="avatarPicker"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;">
+              🚀 Join Game Room
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 1B: LAUNCHING STUDIO ROOM ==================== -->
+    <main id="viewLaunching" class="view">
+      <div class="card" style="margin:auto;max-width:480px;width:100%;text-align:center;padding:42px 32px;">
+        <img src="/assets/ready-rocket.gif" alt="Launching" class="gif-badge" />
+        <h1 id="launchingTitle" style="font-size:26px;font-weight:900;letter-spacing:-0.02em;margin-bottom:8px;">Launching your live room&hellip;</h1>
+        <p id="launchingSub" style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Setting up your 6-digit Game PIN, QR code, and multiplayer stage.</p>
+        <div id="launchingError" class="error-box"></div>
+        <a href="/studio" class="btn btn-ghost btn-sm">&larr; Back to Studio</a>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 1C: LEGACY ADMIN LOGIN (/admin) ==================== -->
+    <main id="viewAdminLogin" class="view">
+      <div class="card" style="margin:auto;max-width:440px;width:100%;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:44px;margin-bottom:8px;">🔐</div>
+          <h1 style="font-size:28px;font-weight:900;letter-spacing:-0.02em;">Admin Sign In</h1>
+          <p style="font-size:14px;color:var(--text-muted);margin-top:4px;">Legacy facilitator console — or jump into the self-serve Creator Studio.</p>
+        </div>
+
+        <div id="adminLoginError" class="error-box"></div>
+
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label class="form-label" for="adminUsername">ADMIN USERNAME</label>
+            <input id="adminUsername" class="input" type="text" autocomplete="username" placeholder="admin" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminPassword">PASSWORD</label>
+            <input id="adminPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter admin password" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:6px;">
+            🔓 Sign In to Admin Console
+          </button>
+        </form>
+
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle);text-align:center;">
+          <a href="/studio" class="btn btn-ghost btn-sm" style="width:100%;">✨ Open QuizArena Creator Studio &rarr;</a>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 2: HOST / ADMIN SETUP ==================== -->
+    <main id="viewHostSetup" class="view">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+        <div>
+          <h1 style="font-size:30px;font-weight:900;letter-spacing:-0.02em;">Quick Deck Room Builder</h1>
+          <p style="color:var(--text-muted);font-size:14px;">Configure built-in decks, timers, and capacity (up to 250 players), or build custom quizzes in <a href="/studio" style="color:var(--g-blue);font-weight:800;">Creator Studio</a>.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a href="/studio" class="btn btn-ghost">✨ Creator Studio</a>
+          <button class="btn btn-ghost" id="backToLandingBtn">&larr; Home</button>
+        </div>
+      </div>
+
+      <div class="setup-grid">
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label" for="roomTitleInput">ROOM TITLE</label>
+            <input id="roomTitleInput" class="input" type="text" value="QuizArena Live Session" maxlength="80" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">QUESTION DECK</label>
+            <div class="deck-cards" id="deckSelector">
+              <div class="deck-option selected" data-deck="BOTH">
+                <div class="deck-option-title">⚡ Full Gauntlet (UC1 + UC2)</div>
+                <div class="deck-option-sub">Interleaved 30 questions across both slide decks</div>
+              </div>
+              <div class="deck-option" data-deck="UC1">
+                <div class="deck-option-title">🛍️ UC1 Only — Cymbal Retail &amp; Studio Factory</div>
+                <div class="deck-option-sub">15 questions: 6-Axis, GKE vLLM, Evals, Routing, FinOps</div>
+              </div>
+              <div class="deck-option" data-deck="UC2">
+                <div class="deck-option-title">🤖 UC2 Only — Production Agents (Sessions 1–5)</div>
+                <div class="deck-option-sub">15 questions: Blast Radius, ADK 2.0 Harness, Zero Trust, Evals/pass^k, Observability &amp; FinOps</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label" for="timeLimitSelect">SECONDS / Q</label>
+              <select id="timeLimitSelect" class="input">
+                <option value="15">15 sec (Fast)</option>
+                <option value="20" selected>20 sec (Standard)</option>
+                <option value="30">30 sec (Relaxed)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maxPlayersSelect">ROOM CAPACITY</label>
+              <select id="maxPlayersSelect" class="input">
+                <option value="50">50 players</option>
+                <option value="100" selected>100 players</option>
+                <option value="250">250 players</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn btn-success btn-lg" id="createRoomBtn" style="width:100%;margin-top:8px;">
+            🎬 Launch Room &amp; Generate PIN
+          </button>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <div>
+              <h2 style="font-size:19px;font-weight:900;">Selected Questions (<span id="selectedQCount">30</span>)</h2>
+              <p style="font-size:12px;color:var(--text-muted);">Uncheck any question to skip it in this session.</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="selectAllQBtn" style="color:var(--text-dark);border-color:var(--text-muted);">All</button>
+              <button class="btn btn-ghost btn-sm" id="selectTop10Btn" style="color:var(--text-dark);border-color:var(--text-muted);">Quick 10</button>
+            </div>
+          </div>
+          <div class="q-preview-list" id="qPreviewList"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 3: HOST LOBBY ==================== -->
+    <main id="viewHostLobby" class="view">
+      <div class="lobby-banner">
+        <div class="pin-box">
+          <span class="pin-label" id="lobbyRoomTitle">QUIZARENA LIVE STAGE</span>
+          <div class="pin-digits" id="lobbyPinDisplay">000 000</div>
+          <div class="join-url-pill" id="copyJoinUrlBtn" title="Click to copy direct join link">
+            🔗 <span id="lobbyJoinUrlText">...</span> &nbsp;📋 Copy Link
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div class="qr-box" id="lobbyQrBox" title="Scan to join room"></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-success btn-lg" id="startGameBtn">▶ Start Quiz</button>
+            <button class="btn btn-ghost btn-sm" id="lockRoomBtn" style="color:var(--text-dark);border-color:var(--text-muted);">🔓 Room Open</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lobby-toolbar">
+        <div class="capacity-pill">
+          👥 <span id="lobbyPlayerCount">0</span> / <span id="lobbyMaxPlayers">100</span> Players
+          <span style="font-size:13px;color:var(--text-muted);font-weight:700;" id="lobbyQCountBadge">&middot; 10 Qs</span>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:12px;color:var(--text-muted);font-weight:700;">Test Load:</span>
+          <button class="btn btn-ghost btn-sm" id="add10BotsBtn">+10 Bots</button>
+          <button class="btn btn-ghost btn-sm" id="add50BotsBtn">+50 Bots</button>
+          <button class="btn btn-ghost btn-sm" id="clearBotsBtn">Clear Bots</button>
+        </div>
+      </div>
+
+      <div class="player-grid" id="lobbyPlayerGrid">
+        <div style="margin:auto;text-align:center;color:var(--text-muted);font-weight:700;">
+          Waiting for players to scan the QR code or enter the PIN&hellip;<br/>
+          <span style="font-size:13px;font-weight:600;">Tip: Click <strong>+10 Bots</strong> or <strong>+50 Bots</strong> to preview a packed room instantly!</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 4: GET READY (SHARED) ==================== -->
+    <main id="viewGetReady" class="view">
+      <div class="ready-stage">
+        <img src="/assets/ready-rocket.gif" alt="Launching next question" class="gif-badge" />
+        <div style="margin-bottom:10px;">
+          <span class="q-meta-pill" id="readyCategory">QUIZ</span>
+        </div>
+        <div id="readyBossTag" style="display:none;margin-bottom:14px;">
+          <span class="boss-pill">
+            <img src="/assets/streak-fire.gif" alt="" style="width:22px;height:22px;" />
+            DOUBLE POINTS BOSS QUESTION (2&times;)
+          </span>
+        </div>
+        <div id="readyPollTag" style="display:none;margin-bottom:14px;">
+          <span class="poll-pill">
+            📊 LIVE POLL (NO POINTS)
+          </span>
+        </div>
+        <h2 style="font-size:34px;font-weight:900;margin-bottom:8px;" id="readyQNumber">Question 1 of 10</h2>
+        <p style="color:var(--text-muted);font-size:15px;margin-bottom:18px;" id="readySlideRef"></p>
+        <div class="ready-count-wrap">
+          <div class="ready-shockwave"></div>
+          <div class="ready-count" id="readyCountdown">3</div>
+        </div>
+        <p style="color:var(--text-muted);font-weight:700;margin-top:12px;">Get your fingers ready&hellip;</p>
+      </div>
+    </main>
+
+    <!-- ==================== VIEW 5: HOST QUESTION STAGE ==================== -->
+    <main id="viewHostQuestion" class="view">
+      <div class="timer-ribbon-track">
+        <div class="timer-ribbon-fill" id="hqTimerRibbon"></div>
+      </div>
+
+      <div class="q-header">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="q-meta-pill" id="hqProgress">Q 1 / 10</span>
+          <span class="q-meta-pill" id="hqCategory">General</span>
+          <span class="boss-pill" id="hqBossBadge" style="display:none;">
+            <img src="/assets/streak-fire.gif" alt="" style="width:20px;height:20px;" /> 2&times; POINTS
+          </span>
+          <span class="poll-pill" id="hqPollBadge" style="display:none;">
+            📊 LIVE POLL (NO POINTS)
+          </span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-amber btn-sm" id="skipTimerBtn">⏭ End Timer &amp; Reveal</button>
+          <button class="btn btn-ghost btn-sm" id="endGameEarlyBtn">🏁 End Quiz</button>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-text" id="hqText">Question text goes here</div>
+      </div>
+
+      <div class="stage-hud">
+        <div class="timer-ring-wrap" id="hqTimerWrap">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" stroke-width="8"></circle>
+            <circle id="hqTimerCircle" cx="50" cy="50" r="42" fill="none" stroke="#1a73e8" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="0"></circle>
+          </svg>
+          <span class="timer-num" id="hqTimerNum">20</span>
+        </div>
+
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:12px;font-weight:800;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;">Topic</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text-dark);margin-top:4px;" id="hqSlideRef">Live Arena</div>
+        </div>
+
+        <div class="answers-counter">
+          <div class="answers-counter-num"><span id="hqAnsweredCount">0</span><span style="font-size:18px;color:var(--text-muted);">/<span id="hqTotalPlayers">0</span></span></div>
+          <div class="answers-counter-label" id="hqAnswersLabel">Answers In</div>
+        </div>
+      </div>
+
+      <div class="options-grid" id="hqOptionsGrid"></div>
+    </main>
+
+    <!-- ==================== VIEW 6: HOST REVEAL & DEBRIEF ==================== -->
+    <main id="viewHostReveal" class="view">
+      <div class="q-header">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="q-meta-pill" id="hrAccuracyPill">Accuracy: 74%</span>
+          <span class="q-meta-pill" id="hrSlideRef">Topic</span>
+          <span class="poll-pill" id="hrPollBadge" style="display:none;">📊 LIVE POLL (NO POINTS)</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-amber btn-lg" id="showLeaderboardBtn">🏆 Next: Leaderboard &rarr;</button>
+        </div>
+      </div>
+
+      <div class="question-card" style="padding:20px 26px;margin-bottom:16px;">
+        <div class="question-text" style="font-size:clamp(18px,2.2vw,24px);" id="hrQuestionText"></div>
+      </div>
+
+      <div class="chart-wrap" id="hrChartWrap"></div>
+
+      <div class="debrief-box" id="hrDebriefBox">
+        <img src="/assets/correct-party.gif" alt="Verified" class="gif-badge-sm" />
+        <div>
+          <div class="debrief-label" id="hrDebriefLabel">Facilitator Debrief Note</div>
+          <div id="hrExplanation" style="font-size:15px;line-height:1.5;color:var(--text-dark);font-weight:600;"></div>
+        </div>
+      </div>
+
+      <div class="options-grid" id="hrOptionsGrid"></div>
+    </main>
+
+    <!-- ==================== VIEW 7: HOST LEADERBOARD ==================== -->
+    <main id="viewHostLeaderboard" class="view">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="/assets/podium-crown.gif" alt="Leaderboard" class="gif-badge-sm" />
+          <div>
+            <h1 style="font-size:32px;font-weight:900;letter-spacing:-0.02em;">Live Leaderboard</h1>
+            <p style="color:var(--text-muted);font-size:14px;" id="lbSubtitle">Top players out of 100</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" id="lbExportCsvBtn">📥 Export CSV</button>
+          <button class="btn btn-success btn-lg" id="lbNextBtn">Next Question &rarr;</button>
+        </div>
+      </div>
+
+      <div class="lb-list" id="hostLbList"></div>
+    </main>
+
+    <!-- ==================== VIEW 8: HOST PODIUM FINALE ==================== -->
+    <main id="viewHostPodium" class="view">
+      <div class="podium-hero">
+        <img src="/assets/champion-trophy.svg" alt="Championship Trophy" class="podium-trophy-img" />
+        <h1 style="font-size:clamp(32px,4.2vw,46px);font-weight:900;letter-spacing:-0.03em;">
+          <img src="/assets/podium-crown.gif" alt="" class="gif-badge-sm" style="margin-right:6px;" />
+          <span id="podiumHeadingText">QuizArena Champions</span>
+        </h1>
+        <p style="color:var(--text-muted);margin-top:6px;font-size:15px;" id="podiumStatsLine"></p>
+      </div>
+
+      <div class="podium-stage" id="podiumStage"></div>
+
+      <div id="hardestQuestionCard" class="debrief-box" style="max-width:780px;margin:0 auto 22px;display:none;">
+        <div style="font-size:26px;">🧠</div>
+        <div>
+          <div class="debrief-label">Toughest Question to Debrief</div>
+          <div id="hardestQuestionText" style="font-size:15px;font-weight:700;color:var(--text-dark);"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <a href="/studio" class="btn btn-ghost btn-lg" id="podiumStudioBtn">&larr; Studio</a>
+        <a href="/studio#reports" class="btn btn-ghost btn-lg" id="podiumViewReportBtn">📊 View Report in Studio</a>
+        <button class="btn btn-amber btn-lg" id="podiumExportCsvBtn">📥 Download CSV</button>
+        <button class="btn btn-primary btn-lg" id="playAgainBtn">🔄 Play Again (Back to Lobby)</button>
+      </div>
+
+      <div class="lb-list" id="podiumRestList"></div>
+    </main>
+
+    <!-- ==================== VIEW 9: PLAYER CONTROLLER ==================== -->
+    <main id="viewPlayer" class="view">
+      <div id="playerHeader" style="display:flex;align-items:center;justify-content:space-between;background:#ffffff;border:1px solid var(--border-subtle);box-shadow:var(--shadow-card);padding:12px 18px;border-radius:16px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;">
+          <span id="pAvatar" style="font-size:24px;">🚀</span>
+          <span id="pName">Player</span>
+        </div>
+        <div class="mono" style="font-weight:800;font-size:18px;color:#1a73e8;">
+          <span id="pScore">0</span> pts
+        </div>
+      </div>
+
+      <!-- Player Waiting / Lobby -->
+      <div id="pStateWaiting" class="player-status-card waiting">
+        <img src="/assets/ready-rocket.gif" alt="Ready" class="gif-badge" />
+        <h2 style="font-size:28px;font-weight:900;margin-bottom:8px;">You're in!</h2>
+        <p style="color:var(--text-muted);font-size:15px;line-height:1.5;">
+          See your nickname on the presenter's screen?<br/>
+          Send a reaction to the big screen while we wait!
+        </p>
+        <div class="reaction-bar" id="lobbyReactionBar">
+          <button type="button" class="reaction-btn" data-emoji="🔥">🔥</button>
+          <button type="button" class="reaction-btn" data-emoji="🚀">🚀</button>
+          <button type="button" class="reaction-btn" data-emoji="👏">👏</button>
+          <button type="button" class="reaction-btn" data-emoji="🤯">🤯</button>
+          <button type="button" class="reaction-btn" data-emoji="🎉">🎉</button>
+          <button type="button" class="reaction-btn" data-emoji="⚡">⚡</button>
+        </div>
+      </div>
+
+      <!-- Player Active Question -->
+      <div id="pStateQuestion" style="display:none;flex:1;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="q-meta-pill" id="pqProgress">Q 1 / 10</span>
+            <span class="boss-pill" id="pqBossBadge" style="display:none;padding:6px 12px;font-size:12px;">🔥 2&times; POINTS</span>
+            <span class="poll-pill" id="pqPollBadge" style="display:none;padding:6px 12px;font-size:12px;">📊 LIVE POLL (NO POINTS)</span>
+          </div>
+          <span class="q-meta-pill mono" id="pqTimer">20s</span>
+        </div>
+        <div class="question-card" style="padding:18px 20px;margin-bottom:16px;">
+          <div id="pqText" style="font-size:18px;font-weight:800;line-height:1.35;"></div>
+        </div>
+        <div class="options-grid" id="pqOptionsGrid" style="flex:1;"></div>
+      </div>
+
+      <!-- Player Locked In -->
+      <div id="pStateLocked" class="player-status-card waiting" style="display:none;">
+        <img src="/assets/ready-rocket.gif" alt="Locked" class="gif-badge" />
+        <h2 id="pLockedTitle" style="font-size:28px;font-weight:900;margin-bottom:8px;">Answer Locked In!</h2>
+        <p style="color:var(--text-muted);font-size:15px;">Waiting for the rest of the room to finish&hellip;</p>
+      </div>
+
+      <!-- Player Reveal Feedback -->
+      <div id="pStateReveal" class="player-status-card" style="display:none;">
+        <img id="prGif" src="/assets/correct-party.gif" alt="Result" class="gif-badge" />
+        <h2 id="prTitle" style="font-size:32px;font-weight:900;margin-bottom:6px;">Correct!</h2>
+        <div id="prPoints" class="mono" style="font-size:28px;font-weight:800;margin-bottom:12px;">+940 pts</div>
+        <div id="prRankLine" style="font-size:15px;font-weight:700;opacity:0.95;margin-bottom:8px;"></div>
+        <div id="prAheadLine" style="font-size:13px;font-weight:700;background:rgba(0,0,0,0.22);padding:8px 14px;border-radius:10px;display:inline-block;margin-bottom:14px;"></div>
+        <div id="prExplain" style="font-size:13px;line-height:1.45;background:rgba(0,0,0,0.2);padding:12px 14px;border-radius:12px;text-align:left;"></div>
+      </div>
+
+      <!-- Player Leaderboard Standings -->
+      <div id="pStateLeaderboard" class="player-status-card waiting" style="display:none;max-width:560px;">
+        <img src="/assets/podium-crown.gif" alt="Leaderboard" class="gif-badge-sm" style="margin-bottom:6px;" />
+        <h2 style="font-size:24px;font-weight:900;margin-bottom:4px;">Live Leaderboard</h2>
+        <div id="plMyBanner" style="font-size:14px;font-weight:800;color:#1a73e8;margin-bottom:14px;"></div>
+        <div class="lb-list" id="plTop5List" style="margin:0;text-align:left;"></div>
+      </div>
+
+      <!-- Player Podium Summary -->
+      <div id="pStatePodium" class="player-status-card waiting" style="display:none;">
+        <img src="/assets/podium-crown.gif" alt="Podium" class="gif-badge" />
+        <h2 id="ppRankTitle" style="font-size:30px;font-weight:900;margin-bottom:8px;">You Finished #1!</h2>
+        <div id="ppStats" style="font-size:16px;color:var(--text-dark);font-weight:700;margin-bottom:14px;"></div>
+        <p style="font-size:14px;color:var(--text-muted);">Celebrate on the main stage!</p>
+        <div class="reaction-bar" id="podiumReactionBar">
+          <button type="button" class="reaction-btn" data-emoji="🎉">🎉</button>
+          <button type="button" class="reaction-btn" data-emoji="👏">👏</button>
+          <button type="button" class="reaction-btn" data-emoji="🔥">🔥</button>
+          <button type="button" class="reaction-btn" data-emoji="🚀">🚀</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/audio.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

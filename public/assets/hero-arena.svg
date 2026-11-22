@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <radialGradient id="lightBg" cx="50%" cy="42%" r="68%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#eff6ff"/>
+      <stop offset="100%" stop-color="#dbeafe"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="50%" stop-color="#fbbc04"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#1e293b" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#lightBg)"/>
+
+  <!-- Subtle Google 4-color daylight arcs -->
+  <circle cx="120" cy="80" r="140" fill="#4285f4" opacity="0.07"/>
+  <circle cx="690" cy="95" r="130" fill="#fbbc04" opacity="0.09"/>
+  <circle cx="660" cy="390" r="130" fill="#34a853" opacity="0.08"/>
+  <circle cx="140" cy="380" r="120" fill="#ea4335" opacity="0.06"/>
+
+  <!-- Clean white stage floor -->
+  <ellipse cx="400" cy="378" rx="310" ry="42" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <ellipse cx="400" cy="378" rx="195" ry="22" fill="#e8f0fe"/>
+
+  <!-- Floating Google 4-color Kahoot tiles -->
+  <g filter="url(#softShadow)">
+    <animateTransform attributeName="transform" type="translate" values="0,0; 0,-12; 0,0" dur="4.2s" repeatCount="indefinite"/>
+    <rect x="82" y="92" width="116" height="86" rx="18" fill="#ea4335"/>
+    <rect x="82" y="166" width="116" height="12" rx="6" fill="#b3261e"/>
+    <polygon points="140,112 162,152 118,152" fill="#ffffff"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <animateTransform attributeName="transform" type="translate" values="0,-10; 0,6; 0,-10" dur="4.8s" repeatCount="indefinite"/>
+    <rect x="602" y="88" width="116" height="86" rx="18" fill="#1a73e8"/>
+    <rect x="602" y="162" width="116" height="12" rx="6" fill="#1557b0"/>
+    <polygon points="660,108 682,130 660,152 638,130" fill="#ffffff"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <animateTransform attributeName="transform" type="translate" values="0,4; 0,-12; 0,4" dur="5.1s" repeatCount="indefinite"/>
+    <rect x="116" y="246" width="112" height="82" rx="18" fill="#f9ab00"/>
+    <rect x="116" y="316" width="112" height="12" rx="6" fill="#c77c02"/>
+    <circle cx="172" cy="285" r="20" fill="#ffffff"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <animateTransform attributeName="transform" type="translate" values="0,-8; 0,10; 0,-8" dur="4.5s" repeatCount="indefinite"/>
+    <rect x="572" y="248" width="112" height="82" rx="18" fill="#1e8e3e"/>
+    <rect x="572" y="318" width="112" height="12" rx="6" fill="#137333"/>
+    <rect x="610" y="269" width="36" height="36" rx="6" fill="#ffffff"/>
+  </g>
+
+  <!-- Centerpiece Podium & Trophy -->
+  <g filter="url(#softShadow)">
+    <rect x="275" y="295" width="76" height="72" rx="10" fill="#cbd5e1"/>
+    <rect x="449" y="313" width="76" height="54" rx="10" fill="#fb923c"/>
+    <rect x="355" y="265" width="90" height="102" rx="12" fill="url(#goldGrad)"/>
+
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0,0; 0,-9; 0,0" dur="3.6s" repeatCount="indefinite"/>
+      <path d="M352,138 C326,138 326,184 358,186" fill="none" stroke="#f9ab00" stroke-width="10" stroke-linecap="round"/>
+      <path d="M448,138 C474,138 474,184 442,186" fill="none" stroke="#f9ab00" stroke-width="10" stroke-linecap="round"/>
+      <path d="M350,122 L450,122 L440,188 C436,214 420,226 400,226 C380,226 364,214 360,188 Z" fill="url(#goldGrad)"/>
+      <ellipse cx="400" cy="122" rx="50" ry="10" fill="#fef08a"/>
+      <rect x="390" y="222" width="20" height="24" fill="#d97706"/>
+      <rect x="366" y="242" width="68" height="14" rx="6" fill="#fbbc04"/>
+      <polygon points="400,148 406,164 423,164 409,174 414,190 400,180 386,190 391,174 377,164 394,164" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <!-- Twinkling Google-color confetti dots -->
+  <circle cx="315" cy="98" r="5" fill="#4285f4"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite"/></circle>
+  <circle cx="490" cy="108" r="5" fill="#ea4335"><animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite"/></circle>
+  <circle cx="255" cy="202" r="4.5" fill="#34a853"><animate attributeName="opacity" values="0.3;1;0.3" dur="1.9s" repeatCount="indefinite"/></circle>
+  <circle cx="538" cy="196" r="5" fill="#fbbc04"><animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite"/></circle>
+</svg>

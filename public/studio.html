@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuizArena Creator Studio — Build, Generate &amp; Host Live Quizzes</title>
+  <meta name="description" content="Create custom interactive quizzes, generate questions with Gemini AI, import CSV/JSON/Markdown, analyze session reports, and launch 250-player live multiplayer games in QuizArena." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/studio.css" />
+</head>
+<body>
+  <div class="stage-bg" aria-hidden="true">
+    <div class="geo geo-1"></div>
+    <div class="geo geo-2"></div>
+    <div class="geo geo-3"></div>
+    <div class="geo geo-4"></div>
+  </div>
+
+  <div class="app-shell">
+    <!-- ==================== STUDIO TOPBAR ==================== -->
+    <header class="topbar studio-topbar">
+      <div class="brand" id="studioBrandBtn" title="QuizArena Creator Studio">
+        <div class="brand-mark">QA</div>
+        <div>
+          <div class="brand-title-row">
+            <span class="brand-title">QuizArena</span>
+            <span class="studio-tag">STUDIO</span>
+          </div>
+          <div class="brand-sub">Creator Workspace &middot; Live Multiplayer Quizzes</div>
+        </div>
+      </div>
+
+      <nav class="studio-nav" id="studioNavTabs" aria-label="Creator Studio Views" style="display:none;">
+        <button type="button" class="studio-tab active" id="tabBtnQuizzes" data-tab="quizzes">
+          <span>📁 My Quizzes</span>
+          <span class="tab-count" id="navMyCount">0</span>
+        </button>
+        <button type="button" class="studio-tab" id="tabBtnTemplates" data-tab="templates">
+          <span>🌟 Templates</span>
+          <span class="tab-count" id="navTplCount">0</span>
+        </button>
+        <button type="button" class="studio-tab" id="tabBtnReports" data-tab="reports">
+          <span>📊 Past Reports</span>
+          <span class="tab-count" id="navRepCount">0</span>
+        </button>
+        <button type="button" class="studio-tab" id="tabBtnEditor" data-tab="editor">
+          <span>✏️ Quiz Editor</span>
+          <span class="dirty-dot" id="navEditorDirtyDot" title="Unsaved changes" style="display:none;"></span>
+        </button>
+        <button type="button" class="studio-tab" id="tabBtnAccess" data-tab="access" style="display:none;">
+          <span>🔐 Access Control</span>
+          <span class="tab-count" id="navAccessCount">1</span>
+        </button>
+      </nav>
+
+      <div class="topbar-controls">
+        <a href="/" class="btn btn-ghost btn-sm studio-link-btn" id="goJoinArenaBtn">🎯 Join a Game</a>
+        <div class="user-pill-group" id="userBadgeWrap" style="display:none;">
+          <div class="user-chip" title="Signed-in Authorized Creator">
+            <span class="user-avatar" id="userInitial">A</span>
+            <span class="user-name" id="userNameLabel">Creator</span>
+            <span class="guest-tag" id="userRoleTag" style="display:none;background:#dbeafe;color:#1d4ed8;">ADMIN</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="logoutBtn" title="Sign out of Creator Studio">Sign Out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== BOOT VERIFYING STATE ==================== -->
+    <div id="studioBootLoader" class="studio-boot" style="display:none;">
+      <div class="card studio-boot-card">
+        <div class="spinner-ring" aria-hidden="true"></div>
+        <div class="studio-boot-text">Opening Creator Studio&hellip;</div>
+      </div>
+    </div>
+
+    <!-- ==================== VIEW A: CREATOR AUTH SCREEN ==================== -->
+    <main id="viewStudioAuth" class="studio-auth-wrap" style="display:none;">
+      <div class="studio-auth-grid">
+        <section class="card-studio studio-showcase">
+          <div>
+            <div class="hero-art-wrap studio-hero-art">
+              <img src="/assets/hero-arena.svg" alt="QuizArena Live Multiplayer Creator Studio" />
+            </div>
+            <h1 class="hero-title studio-hero-title">Create &amp; Host Live Quizzes in Seconds</h1>
+            <p class="hero-desc">
+              Design interactive <strong>4-choice MCQs</strong>, <strong>True / False</strong> speed rounds,
+              <strong>2&times; Boss questions</strong>, and <strong>Live Polls</strong> &mdash; or generate a full quiz from your notes with Gemini AI.
+            </p>
+            <div class="stat-strip">
+              <div class="stat-chip">
+                <div class="stat-chip-val">250</div>
+                <div class="stat-chip-lbl">Live Players</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-chip-val">AI + CSV</div>
+                <div class="stat-chip-lbl">1-Click Import</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-chip-val">CSV</div>
+                <div class="stat-chip-lbl">Game Reports</div>
+              </div>
+            </div>
+
+            <div class="showcase-templates-box">
+              <div class="showcase-templates-label">INCLUDED STARTER TEMPLATES</div>
+              <div class="showcase-tpl-list" id="authPublicPreviewList">
+                <div class="showcase-tpl-chip">⚡ APAC AI Expert Full Gauntlet</div>
+                <div class="showcase-tpl-chip">🛍️ UC1 GenAI &amp; FinOps</div>
+                <div class="showcase-tpl-chip">🤖 UC2 Production Agents</div>
+                <div class="showcase-tpl-chip">🌎 Cloud &amp; Tech Fundamentals</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="studio-showcase-foot">
+            Looking to join an active game room with a 6-digit PIN? <a href="/">Go to Player Join Screen &rarr;</a>
+          </div>
+        </section>
+
+        <section class="card studio-auth-card" style="display:flex;flex-direction:column;justify-content:center;">
+          <div style="margin-bottom:18px;">
+            <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#1d4ed8;background:#e8f0fe;padding:5px 11px;border-radius:999px;margin-bottom:10px;">
+              🔐 INVITE-ONLY CREATOR ACCESS
+            </div>
+            <h2 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;margin-bottom:4px;">Authorized Host Sign In</h2>
+            <p style="font-size:14px;color:var(--text-muted);line-height:1.5;">
+              Only pre-authorized accounts can create or host quizzes. Guest access and public sign-ups are disabled.
+            </p>
+          </div>
+
+          <div class="segmented-bar" role="tablist" aria-label="Sign In or Activate Pre-Approved Email">
+            <button type="button" class="seg-btn active" id="authTabLogin" data-auth-mode="login" role="tab" aria-selected="true">Sign In</button>
+            <button type="button" class="seg-btn" id="authTabRegister" data-auth-mode="register" role="tab" aria-selected="false">Activate Approved Email</button>
+          </div>
+
+          <div id="authErrorBox" class="error-box" role="alert"></div>
+
+          <!-- Sign In Form -->
+          <form id="loginForm" autocomplete="on">
+            <div class="form-group">
+              <label class="form-label" for="loginEmail">AUTHORIZED EMAIL (OR ADMIN)</label>
+              <input id="loginEmail" class="input" type="text" autocomplete="username" placeholder="you@google.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="loginPassword">PASSWORD</label>
+              <input id="loginPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter your password" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg studio-full-btn" id="loginSubmitBtn">
+              🔓 Sign In to Studio
+            </button>
+          </form>
+
+          <!-- Activate Pre-Approved Account Form -->
+          <form id="registerForm" autocomplete="on" style="display:none;">
+            <p style="font-size:13px;color:var(--text-secondary);background:#f8fafc;border:1px solid var(--border-subtle);padding:10px 12px;border-radius:10px;margin-bottom:14px;">
+              Already added to the allowlist by an admin? Enter your approved email below to set your password.
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="registerName">YOUR DISPLAY NAME</label>
+              <input id="registerName" class="input" type="text" maxlength="48" autocomplete="name" placeholder="e.g. Ajitesh Kumar" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="registerEmail">PRE-AUTHORIZED EMAIL</label>
+              <input id="registerEmail" class="input" type="email" autocomplete="email" placeholder="you@google.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="registerPassword">SET PASSWORD (MIN 6 CHARS)</label>
+              <input id="registerPassword" class="input" type="password" minlength="6" autocomplete="new-password" placeholder="At least 6 characters" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg studio-full-btn" id="registerSubmitBtn">
+              ✅ Activate Approved Account
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <!-- ==================== AUTHENTICATED STUDIO WORKSPACE ==================== -->
+    <main id="studioMainShell" class="studio-main" style="display:none;">
+      <h1 class="sr-only" id="studioPageMainHeading">QuizArena Creator Studio</h1>
+
+      <!-- ==================== TAB 1: MY QUIZZES ==================== -->
+      <section id="panelQuizzes" class="studio-panel active" aria-labelledby="myQuizzesHeading">
+        <div class="quick-actions-grid">
+          <button type="button" class="quick-card quick-card-blue" id="heroCreateBlankBtn">
+            <div class="quick-card-icon">➕</div>
+            <div class="quick-card-body">
+              <div class="quick-card-title">Create Blank Quiz</div>
+              <div class="quick-card-desc">Build custom 4-choice MCQs, True/False rounds, 2&times; Boss questions &amp; live polls visually.</div>
+            </div>
+            <span class="quick-card-arrow">&rarr;</span>
+          </button>
+
+          <button type="button" class="quick-card quick-card-amber" id="heroGenerateAiBtn">
+            <div class="quick-card-icon">✨</div>
+            <div class="quick-card-body">
+              <div class="quick-card-title">Generate Quiz with AI</div>
+              <div class="quick-card-desc">Enter any topic or paste slide notes &amp; docs to draft balanced questions in seconds.</div>
+            </div>
+            <span class="quick-card-arrow">&rarr;</span>
+          </button>
+
+          <button type="button" class="quick-card quick-card-green" id="heroImportQuizBtn">
+            <div class="quick-card-icon">📥</div>
+            <div class="quick-card-body">
+              <div class="quick-card-title">Import CSV / JSON / Markdown</div>
+              <div class="quick-card-desc">Upload a spreadsheet, JSON deck, or Markdown Q&amp;A notes directly into the editor.</div>
+            </div>
+            <span class="quick-card-arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="section-toolbar">
+          <div class="section-title-group">
+            <h2 id="myQuizzesHeading" class="section-heading">My Quizzes</h2>
+            <span class="count-badge" id="myQuizzesCountBadge">0</span>
+          </div>
+          <div class="toolbar-filters">
+            <input
+              type="search"
+              id="myQuizzesSearch"
+              class="input input-sm toolbar-search"
+              placeholder="Search my quizzes..."
+              aria-label="Search my quizzes"
+            />
+            <select id="myQuizzesSort" class="input input-sm toolbar-select" aria-label="Sort quizzes">
+              <option value="recent">Recently Updated</option>
+              <option value="plays">Most Played</option>
+              <option value="alpha">Title (A–Z)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="myQuizzesGrid" class="quiz-cards-grid"></div>
+
+        <div id="myQuizzesEmpty" class="empty-studio-card" style="display:none;">
+          <div class="empty-icon">🎯</div>
+          <h3>Your quiz library is ready for its first deck</h3>
+          <p>Start from scratch in the visual editor, generate a quiz with Gemini AI, import a CSV/Markdown file, or clone an official starter template.</p>
+          <div class="empty-actions">
+            <button type="button" class="btn btn-primary" id="emptyCreateBtn">➕ Create Blank Quiz</button>
+            <button type="button" class="btn btn-amber" id="emptyAiBtn">✨ Generate with AI</button>
+            <button type="button" class="btn btn-ghost" id="emptyBrowseTplBtn">🌟 Browse Starter Templates</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: FEATURED & COMMUNITY TEMPLATES ==================== -->
+      <section id="panelTemplates" class="studio-panel" aria-labelledby="templatesHeading">
+        <div class="section-toolbar">
+          <div>
+            <div class="section-title-group">
+              <h2 id="templatesHeading" class="section-heading">Featured &amp; Community Templates</h2>
+              <span class="count-badge" id="templatesCountBadge">0</span>
+            </div>
+            <p class="section-sub">Launch any template straight into a live game room, or clone it into My Quizzes to customize every question.</p>
+          </div>
+
+          <div class="toolbar-filters">
+            <div class="filter-pills" id="templateFilterGroup">
+              <button type="button" class="filter-pill active" data-tpl-filter="all">All</button>
+              <button type="button" class="filter-pill" data-tpl-filter="official">Official Starter</button>
+              <button type="button" class="filter-pill" data-tpl-filter="community">Community</button>
+            </div>
+            <input
+              type="search"
+              id="templatesSearch"
+              class="input input-sm toolbar-search"
+              placeholder="Search templates &amp; topics..."
+              aria-label="Search templates"
+            />
+          </div>
+        </div>
+
+        <div id="templatesGrid" class="quiz-cards-grid"></div>
+
+        <div id="templatesEmpty" class="empty-studio-card" style="display:none;">
+          <div class="empty-icon">🌟</div>
+          <h3>No matching templates found</h3>
+          <p>Try clearing your search filter or publish one of your own quizzes with Public visibility.</p>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: PAST GAME REPORTS ==================== -->
+      <section id="panelReports" class="studio-panel" aria-labelledby="reportsHeading">
+        <div id="reportsListSection">
+          <div class="section-toolbar">
+            <div>
+              <div class="section-title-group">
+                <h2 id="reportsHeading" class="section-heading">Past Game Reports</h2>
+                <span class="count-badge" id="reportsCountBadge">0</span>
+              </div>
+              <p class="section-sub">Inspect room accuracy, question-by-question breakdowns, and export full player leaderboards from live sessions you hosted.</p>
+            </div>
+            <div class="toolbar-filters">
+              <button type="button" class="btn btn-ghost btn-sm" id="refreshReportsBtn">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div id="reportsKpiStrip" class="reports-kpi-grid" style="display:none;">
+            <div class="kpi-card">
+              <div class="kpi-lbl">Hosted Sessions</div>
+              <div class="kpi-val mono" id="kpiTotalSessions">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-lbl">Total Players</div>
+              <div class="kpi-val mono" id="kpiTotalPlayers">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-lbl">Average Room Accuracy</div>
+              <div class="kpi-val mono" id="kpiAvgAccuracy">0%</div>
+            </div>
+          </div>
+
+          <div id="reportsTableCard" class="card studio-table-card" style="display:none;">
+            <div class="table-scroll">
+              <table class="studio-table" id="reportsTable">
+                <thead>
+                  <tr>
+                    <th>Date Hosted</th>
+                    <th>Quiz / Session Title</th>
+                    <th>Room PIN</th>
+                    <th>Players</th>
+                    <th>Avg Accuracy</th>
+                    <th>Hardest Question</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="reportsEmpty" class="empty-studio-card" style="display:none;">
+            <div class="empty-icon">📊</div>
+            <h3>No completed game reports yet</h3>
+            <p>Once you host a live game through the final podium, player scores and per-question accuracy analytics are automatically saved here.</p>
+            <div class="empty-actions">
+              <button type="button" class="btn btn-primary" id="emptyReportsGoQuizzesBtn">📁 Host a Quiz from My Library</button>
+              <button type="button" class="btn btn-ghost" id="emptyReportsGoTemplatesBtn">🌟 Launch a Starter Template</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Report Inspector View -->
+        <div id="reportDetailView" style="display:none;">
+          <div class="report-detail-header">
+            <div class="report-detail-left">
+              <button type="button" class="btn btn-ghost btn-sm" id="closeReportDetailBtn">&larr; All Reports</button>
+              <div>
+                <h2 class="report-detail-title" id="repDetailTitle">Session Report</h2>
+                <div class="report-detail-meta" id="repDetailMeta"></div>
+              </div>
+            </div>
+            <div class="report-detail-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="repDetailHostAgainBtn" style="display:none;">▶ Host Quiz Again</button>
+              <a class="btn btn-amber" id="repDetailCsvBtn" href="#" download>📥 Download Results CSV</a>
+            </div>
+          </div>
+
+          <div class="reports-kpi-grid" style="margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-lbl">Room PIN</div>
+              <div class="kpi-val mono" id="repKpiPin">------</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-lbl">Final Players</div>
+              <div class="kpi-val mono" id="repKpiPlayers">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-lbl">Room Avg Accuracy</div>
+              <div class="kpi-val mono" id="repKpiAccuracy">0%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-lbl">Questions Played</div>
+              <div class="kpi-val mono" id="repKpiQuestions">0</div>
+            </div>
+          </div>
+
+          <div id="repHardestBanner" class="debrief-box" style="display:none;">
+            <div style="font-size:24px;">🧠</div>
+            <div>
+              <div class="debrief-label">Toughest Question in Session</div>
+              <div id="repHardestText" style="font-size:15px;font-weight:700;color:var(--text-dark);"></div>
+            </div>
+          </div>
+
+          <div class="report-detail-split">
+            <div class="card studio-subcard">
+              <h3 class="subcard-title">Per-Question Accuracy</h3>
+              <p class="subcard-sub">Percentage of answering players who picked the right option.</p>
+              <div id="repQuestionBars" class="q-acc-list"></div>
+            </div>
+
+            <div class="card studio-subcard">
+              <h3 class="subcard-title">Player Leaderboard</h3>
+              <p class="subcard-sub">Final standings sorted by points, accuracy, and response speed.</p>
+              <div class="table-scroll">
+                <table class="studio-table compact-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Player</th>
+                      <th>Score</th>
+                      <th>Correct</th>
+                      <th>Streak</th>
+                      <th>Avg Speed</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repLeaderboardBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: VISUAL WYSIWYG QUIZ EDITOR ==================== -->
+      <section id="panelEditor" class="studio-panel" aria-label="Visual Quiz Editor">
+        <div class="editor-topbar">
+          <div class="editor-topbar-left">
+            <button type="button" class="btn btn-ghost btn-sm" id="editorBackBtn">&larr; Back to Library</button>
+            <span class="editor-status-pill" id="editorStatusPill">New Draft</span>
+          </div>
+          <div class="editor-topbar-right">
+            <button type="button" class="btn btn-ghost btn-sm" id="editorImportBtn" title="Import questions from file or text">📥 Import</button>
+            <button type="button" class="btn btn-primary" id="saveQuizBtn">💾 Save Quiz</button>
+            <button type="button" class="btn btn-success" id="saveAndHostBtn">💾 Save &amp; Host Live ▶</button>
+          </div>
+        </div>
+
+        <!-- Quiz Metadata Bar -->
+        <div class="card editor-meta-bar">
+          <div class="emoji-picker-wrap">
+            <label class="form-label" for="emojiPickerBtn">ICON</label>
+            <button type="button" class="emoji-trigger" id="emojiPickerBtn" title="Choose cover emoji" aria-haspopup="listbox" aria-expanded="false">
+              <span id="editorEmojiDisplay">🚀</span>
+              <span class="emoji-caret">▾</span>
+            </button>
+            <div class="emoji-popover" id="emojiPickerPopover" role="listbox" style="display:none;">
+              <button type="button" class="emoji-choice" data-emoji="🚀">🚀</button>
+              <button type="button" class="emoji-choice" data-emoji="⚡">⚡</button>
+              <button type="button" class="emoji-choice" data-emoji="🧠">🧠</button>
+              <button type="button" class="emoji-choice" data-emoji="🎯">🎯</button>
+              <button type="button" class="emoji-choice" data-emoji="🌎">🌎</button>
+              <button type="button" class="emoji-choice" data-emoji="🏆">🏆</button>
+              <button type="button" class="emoji-choice" data-emoji="📚">📚</button>
+              <button type="button" class="emoji-choice" data-emoji="🎮">🎮</button>
+              <button type="button" class="emoji-choice" data-emoji="💡">💡</button>
+              <button type="button" class="emoji-choice" data-emoji="🔥">🔥</button>
+            </div>
+          </div>
+
+          <div class="meta-field meta-title-field">
+            <label class="form-label" for="editorQuizTitle">QUIZ TITLE</label>
+            <input id="editorQuizTitle" class="input input-sm" type="text" maxlength="100" placeholder="e.g. Cloud Architecture Showdown" />
+          </div>
+
+          <div class="meta-field meta-desc-field">
+            <label class="form-label" for="editorQuizDesc">DESCRIPTION (OPTIONAL)</label>
+            <input id="editorQuizDesc" class="input input-sm" type="text" maxlength="220" placeholder="Short overview for hosts or community gallery..." />
+          </div>
+
+          <div class="meta-field meta-vis-field">
+            <label class="form-label" for="editorQuizVisibility">VISIBILITY</label>
+            <select id="editorQuizVisibility" class="input input-sm">
+              <option value="private">🔒 Private (Only Me)</option>
+              <option value="unlisted">🔗 Unlisted (Direct Host)</option>
+              <option value="public">🌎 Public (Community Gallery)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Editor Split Workspace: Left Question Sidebar + Center WYSIWYG Stage -->
+        <div class="editor-workspace">
+          <aside class="card editor-sidebar" aria-label="Question Slides List">
+            <div class="sidebar-head">
+              <div class="sidebar-title">Questions (<span id="editorQCount">1</span>)</div>
+              <span class="sidebar-hint">Drag or ↑↓</span>
+            </div>
+
+            <div class="sidebar-q-list" id="editorQuestionList"></div>
+
+            <div class="sidebar-actions">
+              <div class="sidebar-add-row">
+                <button type="button" class="btn btn-primary btn-sm" id="addMcqBtn">➕ Add MCQ</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="addTfBtn">➕ Add True/False</button>
+              </div>
+              <button type="button" class="btn btn-amber btn-sm studio-full-btn" id="addAiMoreBtn">
+                ✨ + Generate More with AI
+              </button>
+            </div>
+          </aside>
+
+          <div class="editor-stage">
+            <!-- Active Question Controls Toolbar -->
+            <div class="card q-controls-bar">
+              <div class="q-control-item">
+                <span class="form-label">QUESTION TYPE</span>
+                <div class="segmented-bar segmented-compact">
+                  <button type="button" class="seg-btn active" id="qTypeMcqBtn" data-qtype="mcq">▲◆●■ 4-Choice MCQ</button>
+                  <button type="button" class="seg-btn" id="qTypeTfBtn" data-qtype="tf">▲◆ True / False</button>
+                </div>
+              </div>
+
+              <div class="q-control-item">
+                <label class="form-label" for="qTimeLimitSelect">TIME LIMIT</label>
+                <select id="qTimeLimitSelect" class="input input-sm">
+                  <option value="10">10 sec (Blitz)</option>
+                  <option value="15">15 sec (Fast)</option>
+                  <option value="20" selected>20 sec (Standard)</option>
+                  <option value="30">30 sec (Deep Dive)</option>
+                  <option value="45">45 sec (Scenario)</option>
+                  <option value="60">60 sec (Extended)</option>
+                </select>
+              </div>
+
+              <div class="q-control-item">
+                <label class="form-label" for="qPointsModeSelect">POINTS MODE</label>
+                <select id="qPointsModeSelect" class="input input-sm">
+                  <option value="1">1&times; Standard</option>
+                  <option value="2">🔥 2&times; Boss Round</option>
+                  <option value="0">📊 0&times; Live Poll (No Points)</option>
+                </select>
+              </div>
+
+              <div class="q-control-item q-control-cat">
+                <label class="form-label" for="qCategoryInput">CATEGORY / TOPIC TAG</label>
+                <input id="qCategoryInput" class="input input-sm" type="text" maxlength="48" placeholder="e.g. GenAI &amp; FinOps" />
+              </div>
+            </div>
+
+            <!-- Live Stage Preview & Interactive Editor Card -->
+            <div class="card stage-canvas-card">
+              <div class="stage-preview-header">
+                <div class="stage-pills-left">
+                  <span class="q-meta-pill" id="stageQNumberPill">Question 1 of 1</span>
+                  <span class="q-meta-pill" id="stageCategoryPill">General</span>
+                  <span class="stage-mode-pill boss" id="stageBossPill" style="display:none;">🔥 2&times; BOSS ROUND</span>
+                  <span class="stage-mode-pill poll" id="stagePollPill" style="display:none;">📊 LIVE POLL &middot; NO POINTS</span>
+                </div>
+                <span class="q-meta-pill mono" id="stageTimerPill">20s</span>
+              </div>
+
+              <div class="prompt-editor-box">
+                <textarea
+                  id="qPromptInput"
+                  class="prompt-textarea"
+                  rows="2"
+                  maxlength="280"
+                  placeholder="Type your question prompt here..."
+                  aria-label="Question prompt"
+                ></textarea>
+                <div class="prompt-footer">
+                  <span class="prompt-tip">Keep prompts crisp (&lt;140 chars) so 100+ players can scan fast.</span>
+                  <span class="char-counter mono" id="qPromptCharCount">0 / 280</span>
+                </div>
+              </div>
+
+              <div class="tiles-instruction-bar">
+                <span id="tilesInstructionText">Click the checkmark circle (✓) on an answer tile to mark it as the <strong>Correct Answer</strong>:</span>
+                <button type="button" class="btn-link-inline" id="resetTfPresetBtn" style="display:none;">Reset labels to True / False</button>
+              </div>
+
+              <div class="editor-tiles-grid" id="editorTilesGrid">
+                <!-- Populated dynamically by studio.js -->
+              </div>
+
+              <div class="editor-debrief-box">
+                <div class="editor-debrief-head">
+                  <label class="debrief-label" for="qExplanationInput">💡 FACILITATOR DEBRIEF / EXPLANATION (SHOWN AFTER REVEAL)</label>
+                  <span class="char-counter mono" id="qExplainCharCount">0 / 400</span>
+                </div>
+                <textarea
+                  id="qExplanationInput"
+                  class="debrief-textarea"
+                  rows="2"
+                  maxlength="400"
+                  placeholder="Optional takeaway note displayed on the presenter screen and player devices once answers are revealed..."
+                ></textarea>
+              </div>
+
+              <div class="question-card-actions">
+                <div class="q-move-btns">
+                  <button type="button" class="btn btn-ghost btn-sm" id="moveQUpBtn" title="Move question earlier">&uarr; Move Up</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="moveQDownBtn" title="Move question later">&darr; Move Down</button>
+                </div>
+                <div class="q-edit-btns">
+                  <button type="button" class="btn btn-ghost btn-sm" id="duplicateQuestionBtn">📋 Duplicate Question</button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="deleteQuestionBtn">🗑️ Delete Question</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 5: SUPER ADMIN ACCESS CONTROL ==================== -->
+      <section id="panelAccess" class="studio-panel" aria-labelledby="accessHeading">
+        <div class="section-toolbar">
+          <div>
+            <div class="section-title-group">
+              <h2 id="accessHeading" class="section-heading">🔐 Creator Access Control</h2>
+              <span class="count-badge" id="accessCountBadge">1</span>
+            </div>
+            <p style="font-size:14px;color:var(--text-muted);margin-top:4px;">
+              Only emails listed below can sign in or activate a Creator Studio account. Guest access and public sign-ups are blocked.
+            </p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:22px;margin-bottom:24px;align-items:start;">
+          <div class="card" style="padding:24px;">
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:4px;">➕ Authorize a New Account</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+              Add a colleague's email. Set an initial password for immediate sign-in, or leave it blank so they set their own under <em>Activate Approved Email</em>.
+            </p>
+            <div id="accessFormError" class="error-box"></div>
+            <form id="authorizeAccountForm">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                  <label class="form-label" for="authAllowEmail">EMAIL ADDRESS</label>
+                  <input id="authAllowEmail" class="input input-sm" type="email" placeholder="colleague@google.com" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="authAllowName">DISPLAY NAME</label>
+                  <input id="authAllowName" class="input input-sm" type="text" maxlength="60" placeholder="e.g. Teammate Name" />
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                  <label class="form-label" for="authAllowRole">ROLE</label>
+                  <select id="authAllowRole" class="input input-sm">
+                    <option value="creator" selected>Creator (Create &amp; Host Quizzes)</option>
+                    <option value="superadmin">Super Admin (Full + Manage Access)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="authAllowPassword">INITIAL PASSWORD (OPTIONAL)</label>
+                  <input id="authAllowPassword" class="input input-sm" type="text" placeholder="Optional (min 6 chars)" />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="authorizeSubmitBtn">
+                ➕ Authorize Account
+              </button>
+            </form>
+          </div>
+
+          <div class="card" style="padding:24px;">
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:4px;">🔑 Change My Password</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+              Update the password for your signed-in account.
+            </p>
+            <div id="pwChangeError" class="error-box"></div>
+            <form id="changePasswordForm">
+              <div class="form-group">
+                <label class="form-label" for="currentPwInput">CURRENT PASSWORD</label>
+                <input id="currentPwInput" class="input input-sm" type="password" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="newPwInput">NEW PASSWORD (MIN 6 CHARS)</label>
+                <input id="newPwInput" class="input input-sm" type="password" minlength="6" required />
+              </div>
+              <button type="submit" class="btn btn-ghost" id="changePwSubmitBtn">
+                Update Password
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:18px 22px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+            <strong style="font-size:16px;font-weight:800;">Authorized Creator Allowlist</strong>
+            <button type="button" class="btn btn-ghost btn-sm" id="refreshAccessBtn">↻ Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="studio-table" style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8fafc;text-align:left;font-size:12px;color:var(--text-muted);">
+                  <th style="padding:12px 20px;">EMAIL</th>
+                  <th style="padding:12px 16px;">NAME</th>
+                  <th style="padding:12px 16px;">ROLE</th>
+                  <th style="padding:12px 16px;">STATUS</th>
+                  <th style="padding:12px 20px;text-align:right;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="accessAccountsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== MODAL 1: LAUNCH LIVE GAME ==================== -->
+  <div class="modal-backdrop" id="launchModal" role="dialog" aria-modal="true" aria-labelledby="launchModalTitle" style="display:none;">
+    <div class="modal-card modal-md">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-emoji" id="launchQuizEmoji">🚀</span>
+          <div>
+            <h2 id="launchModalTitle" class="modal-title">Host Live Game</h2>
+            <p class="modal-sub" id="launchQuizSubtitle">10 questions &middot; Ready for live players</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" data-close-modal="launchModal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="launchMaxPlayers">MAX LIVE PLAYERS</label>
+          <select id="launchMaxPlayers" class="input">
+            <option value="50">50 players (Team Workshop)</option>
+            <option value="100" selected>100 players (All-Hands / Summit)</option>
+            <option value="250">250 players (Large Keynote Stage)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="launchTimerOverride">QUESTION TIMER MODE</label>
+          <select id="launchTimerOverride" class="input">
+            <option value="0" selected>Use each question's saved timer (Recommended)</option>
+            <option value="15">Override all questions &rarr; 15 sec (Fast)</option>
+            <option value="20">Override all questions &rarr; 20 sec (Standard)</option>
+            <option value="30">Override all questions &rarr; 30 sec (Relaxed)</option>
+          </select>
+        </div>
+
+        <label class="checkbox-row" for="launchShuffleOptions">
+          <input type="checkbox" id="launchShuffleOptions" checked />
+          <div>
+            <div class="checkbox-title">Shuffle 4-Choice Answer Positions</div>
+            <div class="checkbox-desc">Randomizes MCQ tile positions per live room while keeping True / False order intact.</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="launchModal">Cancel</button>
+        <button type="button" class="btn btn-success btn-lg" id="confirmLaunchLiveBtn">
+          🎬 Launch Live Room &amp; Get PIN ▶
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: AI QUIZ GENERATOR ==================== -->
+  <div class="modal-backdrop" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" style="display:none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2 id="aiModalTitle" class="modal-title">✨ Generate Quiz with Gemini AI</h2>
+          <p class="modal-sub" id="aiModalSubtitle">Powered by Vertex AI Gemini 3.8 Flash &mdash; generates balanced options, boss rounds &amp; debrief notes.</p>
+        </div>
+        <button type="button" class="modal-close" data-close-modal="aiModal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="aiGenerateForm">
+        <div class="modal-body">
+          <div id="aiErrorBox" class="error-box" role="alert"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="aiPromptInput">QUIZ TOPIC OR INSTRUCTIONS</label>
+            <input
+              id="aiPromptInput"
+              class="input"
+              type="text"
+              maxlength="240"
+              placeholder="e.g. Google Cloud GKE, Vertex AI Agents &amp; FinOps architecture"
+            />
+            <div class="chip-suggestions" aria-label="Sample prompts">
+              <button type="button" class="suggestion-chip" data-ai-sample="Vertex AI Agents, Tool Use, Evals &amp; Production Guardrails">🤖 Vertex AI Agents</button>
+              <button type="button" class="suggestion-chip" data-ai-sample="Kubernetes, Cloud Run &amp; Distributed Systems SRE">☁️ Cloud &amp; SRE</button>
+              <button type="button" class="suggestion-chip" data-ai-sample="Modern AI Engineering, RAG, Embeddings &amp; Token FinOps">⚡ GenAI &amp; FinOps</button>
+              <button type="button" class="suggestion-chip" data-ai-sample="Global Science, Space Exploration &amp; Tech History Trivia">🌎 Science &amp; Tech Trivia</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="aiSourceText">PASTE SOURCE NOTES / DOCUMENT / SLIDE TEXT (OPTIONAL)</label>
+            <textarea
+              id="aiSourceText"
+              class="input studio-textarea"
+              rows="4"
+              maxlength="20000"
+              placeholder="Optional: Paste meeting notes, architecture docs, or slide bullets here to ground every question strictly in your material..."
+            ></textarea>
+          </div>
+
+          <div class="modal-grid-2">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="aiQuestionCount">NUMBER OF QUESTIONS</label>
+              <select id="aiQuestionCount" class="input input-sm">
+                <option value="5">5 Questions (Quick Icebreaker)</option>
+                <option value="10" selected>10 Questions (Standard Session)</option>
+                <option value="15">15 Questions (Deep Dive)</option>
+                <option value="20">20 Questions (Full Gauntlet)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="aiDifficulty">DIFFICULTY</label>
+              <select id="aiDifficulty" class="input input-sm">
+                <option value="easy">Easy (Accessible &amp; Fun)</option>
+                <option value="medium" selected>Medium (Balanced Challenge)</option>
+                <option value="hard">Hard (Expert &amp; Architectural)</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="checkbox-row" for="aiIncludeTf" style="margin-top:14px;">
+            <input type="checkbox" id="aiIncludeTf" checked />
+            <div>
+              <div class="checkbox-title">Include True / False questions</div>
+              <div class="checkbox-desc">Mixes fast 2-choice True/False speed questions alongside 4-choice MCQs.</div>
+            </div>
+          </label>
+
+          <div id="aiGeneratingBanner" class="ai-generating-box" style="display:none;">
+            <div class="ai-progress-bar"><div class="ai-progress-fill"></div></div>
+            <div class="ai-generating-row">
+              <div class="spinner-ring spinner-sm" aria-hidden="true"></div>
+              <div>
+                <div class="ai-gen-title">Crafting your quiz with Gemini 3.8 Flash&hellip;</div>
+                <div class="ai-gen-sub">Writing scannable prompts, balanced distractors, and facilitator debrief notes (usually 4–8s).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal="aiModal" id="cancelAiModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-lg" id="confirmAiGenerateBtn">
+            ✨ Generate Draft in Editor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: IMPORT CSV / JSON / MARKDOWN ==================== -->
+  <div class="modal-backdrop" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="display:none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2 id="importModalTitle" class="modal-title">📥 Import Quiz (CSV, JSON, or Markdown)</h2>
+          <p class="modal-sub">Upload a file or paste questions directly &mdash; opens in the Visual Editor so you can review before saving.</p>
+        </div>
+        <button type="button" class="modal-close" data-close-modal="importModal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="importQuizForm">
+        <div class="modal-body">
+          <div id="importErrorBox" class="error-box" role="alert"></div>
+
+          <div class="modal-grid-2" style="margin-bottom:14px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="importFormatSelect">INPUT FORMAT</label>
+              <select id="importFormatSelect" class="input input-sm">
+                <option value="auto" selected>Auto-Detect Format</option>
+                <option value="csv">CSV / TSV Spreadsheet</option>
+                <option value="json">JSON Quiz / Array</option>
+                <option value="markdown">Markdown Q&amp;A</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="importTitleInput">QUIZ TITLE</label>
+              <input id="importTitleInput" class="input input-sm" type="text" maxlength="100" placeholder="Imported Quiz" />
+            </div>
+          </div>
+
+          <div class="import-upload-bar">
+            <label class="file-upload-btn" for="importFileInput">
+              📂 Choose `.csv`, `.tsv`, `.json`, or `.md` File
+              <input type="file" id="importFileInput" accept=".csv,.tsv,.json,.md,.markdown,.txt" hidden />
+            </label>
+            <span class="upload-filename" id="importFileName">No file selected (or paste below)</span>
+            <a href="/api/quizzes/template.csv" download="quizarena-template.csv" class="btn btn-ghost btn-sm">
+              📥 Download Sample CSV Template
+            </a>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <label class="form-label" for="importContentInput" style="margin-bottom:0;">QUIZ CONTENT</label>
+              <button type="button" class="btn-link-inline" id="insertImportSampleBtn">Paste sample snippet</button>
+            </div>
+            <textarea
+              id="importContentInput"
+              class="input studio-textarea mono-textarea"
+              rows="8"
+              placeholder="Paste CSV rows, JSON array/object, or Markdown questions here..."
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal="importModal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-lg" id="confirmImportBtn">
+            📥 Parse &amp; Open in Editor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: TEMPLATE / QUIZ PREVIEW ==================== -->
+  <div class="modal-backdrop" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle" style="display:none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-emoji" id="previewQuizEmoji">⚡</span>
+          <div>
+            <h2 id="previewModalTitle" class="modal-title">Template Preview</h2>
+            <p class="modal-sub" id="previewModalMeta"></p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" data-close-modal="previewModal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="preview-toolbar">
+          <span id="previewQuizDesc" class="preview-desc"></span>
+          <label class="inline-toggle" for="previewShowAnswers">
+            <input type="checkbox" id="previewShowAnswers" checked />
+            <span>Highlight correct answers</span>
+          </label>
+        </div>
+        <div id="previewQuestionsList" class="preview-q-list"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="previewModal">Close</button>
+        <button type="button" class="btn btn-primary" id="previewCloneBtn">📋 Clone &amp; Customize</button>
+        <button type="button" class="btn btn-success" id="previewHostNowBtn">▶ Host Live Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: DELETE CONFIRMATION ==================== -->
+  <div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" style="display:none;">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle" class="modal-title">Delete Quiz?</h2>
+        <button type="button" class="modal-close" data-close-modal="deleteModal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:15px;line-height:1.55;color:var(--text-secondary);">
+          Are you sure you want to permanently delete <strong id="deleteQuizTitleText">this quiz</strong>? Past game session reports will remain intact.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="deleteModal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteQuizBtn">🗑️ Delete Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="studioToast" role="status" aria-live="polite"></div>
+
+  <script src="/studio.js"></script>
+</body>
+</html>

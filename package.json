@@ -1,0 +1,23 @@
+{
+  "name": "kahoot-apac-ai",
+  "version": "2.0.0",
+  "description": "QuizArena — Multi-tenant Live Multiplayer Quiz & Poll SaaS Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/e2e_product_test.js"
+  },
+  "keywords": [
+    "quiz",
+    "kahoot",
+    "multiplayer",
+    "websocket",
+    "vertex-ai"
+  ],
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.1.0",
+    "qrcode": "^1.4.1",
+    "ws": "^8.18.3"
+  }
+}
